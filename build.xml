@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ball.http" basedir="." default="jar"
+         xmlns:aether="antlib:org.eclipse.aether.ant">
+
+  <description>
+    ball.http
+    -------------------------------
+    Web API Client (HTTP) Utilities
+
+    $Id$
+  </description>
+
+  <aether:resolve>
+    <dependencies>
+      <dependency coords="ball:parent:1.0:xml:compile"/>
+    </dependencies>
+    <properties/>
+  </aether:resolve>
+  <import file="${ball:parent:xml}"/>
+
+  <target name="http-get"
+          description="--> Invokes &lt;http-get/&gt; task."
+          depends="jar-classes">
+    <taskdef classpathref="build.classpath"
+             resource="ball/http/ant/defaults.properties"/>
+    <http-get classpathref="build.classpath"/>
+  </target>
+
+  <target name="http-post"
+          description="--> Invokes &lt;http-post/&gt; task."
+          depends="jar-classes">
+    <taskdef classpathref="build.classpath"
+             resource="ball/http/ant/defaults.properties"/>
+    <http-post classpathref="build.classpath"/>
+  </target>
+
+</project>

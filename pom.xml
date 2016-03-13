@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id$ -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>ball</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.0</version>
+    <relativePath>../ball/parent/pom.xml</relativePath>
+  </parent>
+  <groupId>ball</groupId>
+  <artifactId>ball-http</artifactId>
+  <name>Web API Client (HTTP) Utilities</name>
+  <packaging>jar</packaging>
+  <properties>
+    <jre.version>1.7</jre.version>
+  </properties>
+  <dependencies verbose="true">
+    <dependency>
+      <groupId>java</groupId>
+      <artifactId>jre</artifactId>
+      <version>${jre.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>ball</groupId>
+      <artifactId>ball-util</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.ant</groupId>
+      <artifactId>ant</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+    </dependency>
+  </dependencies>
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <configuration>
+            <groups>
+              <group>
+                <title>${project.name}</title>
+                <packages>ball.http.*</packages>
+              </group>
+            </groups>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>
