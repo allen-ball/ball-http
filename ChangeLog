@@ -1,3 +1,8 @@
+2016-04-03  Allen D. Ball  <ball@sol.local>
+
+	* src/main/java/ball/http/ant/taskdefs/HTTPTask.java:
+	Added ability to configure HTTPUriRequest through Ant properties.
+
 2016-03-12  Allen D. Ball  <ball@sol.local>
 
 	* Initial writing.
