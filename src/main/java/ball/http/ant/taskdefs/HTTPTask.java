@@ -45,7 +45,7 @@ import static ball.util.StringUtil.isNil;
  * Abstract {@link.uri http://ant.apache.org/ Ant} base
  * {@link org.apache.tools.ant.Task} for GET and POST operations.
  *
- * {@bean-info}
+ * {@bean.info}
  *
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$
@@ -290,7 +290,7 @@ public abstract class HTTPTask extends AbstractClasspathTask {
      * {@link.uri http://ant.apache.org/ Ant}
      * {@link org.apache.tools.ant.Task} to GET.
      *
-     * {@bean-info}
+     * {@bean.info}
      */
     @AntTask("http-get")
     public static class Get extends HTTPTask {
@@ -308,7 +308,7 @@ public abstract class HTTPTask extends AbstractClasspathTask {
      * {@link.uri http://ant.apache.org/ Ant}
      * {@link org.apache.tools.ant.Task} to POST.
      *
-     * {@bean-info}
+     * {@bean.info}
      */
     @AntTask("http-post")
     public static class Post extends HTTPTask {
