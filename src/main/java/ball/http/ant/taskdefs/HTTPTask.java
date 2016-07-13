@@ -100,6 +100,8 @@ public abstract class HTTPTask extends AbstractClasspathTask {
      * See {@link #execute()} and {@link #request()}.
      *
      * @param   request         The {@link HttpUriRequest}.
+     *
+     * @throws  Exception       If an exception is encountered.
      */
     protected void configure(HttpUriRequest request) throws Exception {
         String method = request.getMethod().toUpperCase();
@@ -240,6 +242,8 @@ public abstract class HTTPTask extends AbstractClasspathTask {
 
     /**
      * See {@link #log(String)}.
+     *
+     * @param   message         The {@link HttpMessage} to log.
      */
     protected void log(HttpMessage message) {
         if (message instanceof HttpRequest) {
