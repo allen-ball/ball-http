@@ -1,3 +1,8 @@
+2016-08-27  Allen D. Ball  <ball@sol.local>
+
+	* src/main/java/ball/http/ant/taskdefs/HTTPTask.java:
+	Use URIBuilder and PropertiesImpl.configure(Object).
+
 2016-04-03  Allen D. Ball  <ball@sol.local>
 
 	* src/main/java/ball/http/ant/taskdefs/HTTPTask.java:

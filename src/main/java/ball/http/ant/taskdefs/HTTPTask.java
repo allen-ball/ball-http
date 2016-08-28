@@ -17,22 +17,25 @@ import ball.util.ant.types.StringAttributeType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.tools.ant.BuildException;
@@ -51,14 +54,11 @@ import static ball.util.StringUtil.isNil;
  * @version $Revision$
  */
 public abstract class HTTPTask extends AbstractClasspathTask {
-    private static final String AMPERSAND = "&";
     private static final String DOT = ".";
-    private static final String EQUALS = "=";
 
-    private URI uri = null;
-    private String query = null;
-    private final List<StringAttributeType> parameters = new ArrayList<>();
-    private final List<StringAttributeType> headers = new ArrayList<>();
+    private PropertiesImpl properties = null;
+    private URIBuilder builder = null;
+    private final List<NameValuePairImpl> headers = new ArrayList<>();
     private String content = null;
 
     /**
@@ -66,17 +66,27 @@ public abstract class HTTPTask extends AbstractClasspathTask {
      */
     protected HTTPTask() { super(); }
 
-    public URI getURI() { return uri; }
-    public void setURI(String string) { this.uri = URI.create(string); }
-
-    public String getQuery() { return query; }
-    public void setQuery(String query) { this.query = query; }
-
-    public void addConfiguredParameter(StringAttributeType parameter) {
-        parameters.add(parameter);
+    public void setURI(String string) throws URISyntaxException {
+        builder = new URIBuilder(string);
     }
 
-    public void addConfiguredHeader(StringAttributeType header) {
+    public void setCharset(String string) {
+        builder.setCharset(Charset.forName(string));
+    }
+
+    public void setFragment(String string) { builder.setFragment(string); }
+    public void setHost(String string) { builder.setHost(string); }
+    public void setPath(String string) { builder.setPath(string); }
+    public void setPort(Integer integer) { builder.setPort(integer); }
+    public void setQuery(String string) { builder.setCustomQuery(string); }
+    public void setScheme(String string) { builder.setScheme(string); }
+    public void setUserInfo(String string) { builder.setUserInfo(string); }
+
+    public void addConfiguredParameter(NameValuePairImpl parameter) {
+        builder.addParameter(parameter.getName(), parameter.getValue());
+    }
+
+    public void addConfiguredHeader(NameValuePairImpl header) {
         headers.add(header);
     }
 
@@ -86,6 +96,46 @@ public abstract class HTTPTask extends AbstractClasspathTask {
 
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
+
+    @Override
+    public void init() throws BuildException {
+        super.init();
+
+        String method = getClass().getSimpleName().toUpperCase();
+
+        properties =
+            getPrefixedProperties(method + DOT, getProject().getProperties());
+
+        try {
+            if (properties.containsKey("uri")) {
+                builder = new URIBuilder(properties.getProperty("uri"));
+            } else {
+                builder = new URIBuilder();
+            }
+
+            properties.configure(builder);
+
+            for (Map.Entry<?,?> entry :
+                     getPrefixedProperties("parameter" + DOT, properties)
+                     .entrySet()) {
+                builder.addParameter(entry.getKey().toString(),
+                                     entry.getValue().toString());
+            }
+        } catch (BuildException exception) {
+            throw exception;
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+            throw new BuildException(throwable);
+        }
+    }
+
+    private PropertiesImpl getPrefixedProperties(String prefix, Map<?,?> map) {
+        PropertiesImpl properties = new PropertiesImpl();
+
+        MapUtil.copy(new EntryKeyPrefixedWith(prefix, map), properties);
+
+        return properties;
+    }
 
     /**
      * Method to construct the {@link HTTPTask}-specific
@@ -104,107 +154,30 @@ public abstract class HTTPTask extends AbstractClasspathTask {
      * @throws  Exception       If an exception is encountered.
      */
     protected void configure(HttpUriRequest request) throws Exception {
-        String method = request.getMethod().toUpperCase();
-        Properties properties =
-            getPrefixedProperties(method + DOT, getProject().getProperties());
+        ((HttpRequestBase) request).setURI(builder.build());
 
-        if (getURI() != null) {
-            setRequestURI(request, getURI());
-        } else if (properties.containsKey("uri")) {
-            setRequestURI(request, URI.create(properties.getProperty("uri")));
-        }
-
-        if (! isNil(getQuery())) {
-            addToRequestURIQuery(request, getQuery());
-        } else if (properties.containsKey("query")) {
-            addToRequestURIQuery(request, properties.getProperty("query"));
-        }
-
-        if (! parameters.isEmpty()) {
-            addToRequestURIQuery(request, asQuery(parameters));
-        } else {
-            Properties parameters =
-                getPrefixedProperties("parameter" + DOT, properties);
-
-            addToRequestURIQuery(request, asQuery(parameters.entrySet()));
-        }
-
-        if (! headers.isEmpty()) {
-            addToRequestHeaders(request, headers);
-        } else {
-            Properties headers =
-                getPrefixedProperties("header" + DOT, properties);
-
-            addToRequestHeaders(request, headers.entrySet());
-        }
+        addHeaders(request,
+                   getPrefixedProperties("header" + DOT, properties)
+                   .entrySet());
+        addHeaders(request, headers);
 
         if (! isNil(getContent())) {
-            setRequestEntity(request, getContent());
-        } else if (properties.containsKey("content")) {
-            setRequestEntity(request, properties.getProperty("content"));
+            setEntity(request, getContent());
+        } else if (! isNil(properties.getProperty("content"))) {
+            setEntity(request, properties.getProperty("content"));
         }
     }
 
-    private Properties getPrefixedProperties(String prefix, Map<?,?> map) {
-        return MapUtil.copy(new EntryKeyPrefixedWith(prefix, map),
-                            new PropertiesImpl());
-    }
-
-    private void setRequestURI(HttpUriRequest request, URI uri) {
-        ((HttpRequestBase) request).setURI(uri);
-    }
-
-    private void addToRequestURIQuery(HttpUriRequest request,
-                                      String query) throws Exception {
-        URI uri = request.getURI();
-
-        if (uri != null && (! isNil(query))) {
-            StringBuilder buffer = new StringBuilder();
-
-            if (! isNil(uri.getQuery())) {
-                buffer.append(uri.getQuery());
-            }
-
-            if (! isNil(buffer)) {
-                buffer.append(AMPERSAND);
-            }
-
-            buffer.append(query);
-
-            setRequestURI(request,
-                          new URI(uri.getScheme(), uri.getAuthority(),
-                                  uri.getPath(),
-                                  buffer.toString(), uri.getFragment()));
-        }
-    }
-
-    private String asQuery(Iterable<? extends Map.Entry<?,?>> iterable) {
-        StringBuilder buffer = new StringBuilder();
-
-        for (Map.Entry<?,?> entry : iterable) {
-            if (! isNil(buffer)) {
-                buffer.append(AMPERSAND);
-            }
-
-            buffer
-                .append(entry.getKey())
-                .append(EQUALS)
-                .append(entry.getValue());
-        }
-
-        return buffer.toString();
-    }
-
-    private void addToRequestHeaders(HttpRequest request,
-                                     Iterable<? extends Map.Entry<?,?>> iterable) {
+    private void addHeaders(HttpRequest request,
+                            Iterable<? extends Map.Entry<?,?>> iterable) {
         for (Map.Entry<?,?> entry : iterable) {
             request.addHeader(entry.getKey().toString(),
                               entry.getValue().toString());
         }
     }
 
-    private void setRequestEntity(HttpUriRequest request,
-                                  String content) throws Exception {
+    private void setEntity(HttpUriRequest request,
+                           String content) throws Exception {
         if (! isNil(content)) {
             ((HttpEntityEnclosingRequest) request)
                 .setEntity(new StringEntity(content));
@@ -324,6 +297,18 @@ public abstract class HTTPTask extends AbstractClasspathTask {
 
         @Override
         protected HttpUriRequest request() { return new HttpPost(); }
+    }
+
+    /**
+     * {@link StringAttributeType} implementation that includes
+     * {@link NameValuePair}.
+     */
+    public static class NameValuePairImpl extends StringAttributeType
+                                          implements NameValuePair {
+        /**
+         * Sole constructor.
+         */
+        public NameValuePairImpl() { super(); }
     }
 
     private class EntryKeyPrefixedWith
