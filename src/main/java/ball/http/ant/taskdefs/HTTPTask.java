@@ -231,22 +231,29 @@ public abstract class HTTPTask extends AbstractClasspathTask {
             log(String.valueOf(header));
         }
 
-        HttpEntity entity = null;
+        String type =
+            message.containsHeader(CONTENT_TYPE)
+                ? message.getFirstHeader(CONTENT_TYPE).getValue() : null;
 
         if (message instanceof HttpEntityEnclosingRequest) {
-            entity = ((HttpEntityEnclosingRequest) message).getEntity();
+            log(type, ((HttpEntityEnclosingRequest) message).getEntity());
         } else if (message instanceof HttpResponse) {
-            entity = ((HttpResponse) message).getEntity();
+            log(type, ((HttpResponse) message).getEntity());
         }
+    }
 
+    /**
+     * See {@link #log(String)}.
+     *
+     * @param   type            The entity {@value CONTENT_TYPE} (if
+     *                          specified).
+     * @param   entity          The {@link HttpEntity} to log.
+     */
+    protected void log(String type, HttpEntity entity) {
         if (entity != null) {
             InputStream in = null;
 
             try {
-                String type =
-                    message.containsHeader(CONTENT_TYPE)
-                    ? message.getFirstHeader(CONTENT_TYPE).getValue()
-                    : null;
                 ReaderWriterDataSource ds =
                     new ReaderWriterDataSource(null, type);
 
