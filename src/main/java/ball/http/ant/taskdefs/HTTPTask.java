@@ -231,30 +231,33 @@ public abstract class HTTPTask extends AbstractClasspathTask {
             log(String.valueOf(header));
         }
 
+        HttpEntity entity = null;
+
         if (message instanceof HttpEntityEnclosingRequest) {
+            entity = ((HttpEntityEnclosingRequest) message).getEntity();
+        } else if (message instanceof HttpResponse) {
+            entity = ((HttpResponse) message).getEntity();
+        }
+
+        if (entity != null) {
             InputStream in = null;
 
             try {
-                HttpEntity entity =
-                    ((HttpEntityEnclosingRequest) message).getEntity();
+                String type =
+                    message.containsHeader(CONTENT_TYPE)
+                    ? message.getFirstHeader(CONTENT_TYPE).getValue()
+                    : null;
+                ReaderWriterDataSource ds =
+                    new ReaderWriterDataSource(null, type);
 
-                if (entity != null) {
-                    String type =
-                        message.containsHeader(CONTENT_TYPE)
-                            ? message.getFirstHeader(CONTENT_TYPE).getValue()
-                            : null;
-                    ReaderWriterDataSource ds =
-                        new ReaderWriterDataSource(null, type);
+                in = entity.getContent();
+                IOUtil.copy(in, ds);
 
-                    in = entity.getContent();
-                    IOUtil.copy(in, ds);
+                String string = ds.toString();
 
-                    String string = ds.toString();
-
-                    if (! isNil(string)) {
-                        log(NIL);
-                        log(string);
-                    }
+                if (! isNil(string)) {
+                    log(NIL);
+                    log(string);
                 }
             } catch (IOException exception) {
             } finally {
