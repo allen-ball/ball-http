@@ -15,7 +15,7 @@ import ball.util.ant.taskdefs.AbstractClasspathTask;
 import ball.util.ant.taskdefs.AntTask;
 import ball.util.ant.types.StringAttributeType;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -57,7 +57,7 @@ public abstract class HTTPTask extends AbstractClasspathTask {
     private static final String DOT = ".";
 
     private PropertiesImpl properties = null;
-    private URIBuilder builder = null;
+    private URIBuilder builder = new URIBuilder();
     private final List<NameValuePairImpl> headers = new ArrayList<>();
     private String content = null;
 
@@ -109,8 +109,6 @@ public abstract class HTTPTask extends AbstractClasspathTask {
         try {
             if (properties.containsKey("uri")) {
                 builder = new URIBuilder(properties.getProperty("uri"));
-            } else {
-                builder = new URIBuilder();
             }
 
             properties.configure(builder);
@@ -231,34 +229,45 @@ public abstract class HTTPTask extends AbstractClasspathTask {
             log(String.valueOf(header));
         }
 
-        String type =
-            message.containsHeader(CONTENT_TYPE)
-                ? message.getFirstHeader(CONTENT_TYPE).getValue() : null;
+        log(getContentType(message), getHttpEntity(message));
+    }
+
+    private String getContentType(HttpMessage message) {
+        return (message.containsHeader(CONTENT_TYPE)
+                    ? message.getFirstHeader(CONTENT_TYPE).getValue()
+                    : null);
+    }
+
+    private HttpEntity getHttpEntity(HttpMessage message) {
+        HttpEntity entity = null;
 
         if (message instanceof HttpEntityEnclosingRequest) {
-            log(type, ((HttpEntityEnclosingRequest) message).getEntity());
+            entity = ((HttpEntityEnclosingRequest) message).getEntity();
         } else if (message instanceof HttpResponse) {
-            log(type, ((HttpResponse) message).getEntity());
+            entity = ((HttpResponse) message).getEntity();
         }
+
+        return entity;
     }
 
     /**
      * See {@link #log(String)}.
      *
-     * @param   type            The entity {@value CONTENT_TYPE} (if
+     * @param   type            The entity {@code Content-Type} (if
      *                          specified).
      * @param   entity          The {@link HttpEntity} to log.
      */
     protected void log(String type, HttpEntity entity) {
         if (entity != null) {
-            InputStream in = null;
+            OutputStream out = null;
 
             try {
                 ReaderWriterDataSource ds =
                     new ReaderWriterDataSource(null, type);
 
-                in = entity.getContent();
-                IOUtil.copy(in, ds);
+                out = ds.getOutputStream();
+                entity.writeTo(out);
+                out.close();
 
                 String string = ds.toString();
 
@@ -268,7 +277,7 @@ public abstract class HTTPTask extends AbstractClasspathTask {
                 }
             } catch (IOException exception) {
             } finally {
-                IOUtil.close(in);
+                IOUtil.close(out);
             }
         }
     }
