@@ -30,13 +30,15 @@ import org.apache.http.HttpMessage;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.tools.ant.BuildException;
 
@@ -46,7 +48,8 @@ import static ball.util.StringUtil.isNil;
 
 /**
  * Abstract {@link.uri http://ant.apache.org/ Ant} base
- * {@link org.apache.tools.ant.Task} for GET and POST operations.
+ * {@link org.apache.tools.ant.Task} for DELETE, GET, POST, and PUT
+ * operations.
  *
  * {@bean.info}
  *
@@ -186,7 +189,7 @@ public abstract class HTTPTask extends AbstractClasspathTask {
     public void execute() throws BuildException {
         super.execute();
 
-        HttpClient client = null;
+        CloseableHttpClient client = null;
 
         try {
             client = HttpClientBuilder.create().build();
@@ -241,10 +244,16 @@ public abstract class HTTPTask extends AbstractClasspathTask {
     private HttpEntity getHttpEntity(HttpMessage message) {
         HttpEntity entity = null;
 
-        if (message instanceof HttpEntityEnclosingRequest) {
-            entity = ((HttpEntityEnclosingRequest) message).getEntity();
-        } else if (message instanceof HttpResponse) {
-            entity = ((HttpResponse) message).getEntity();
+        if (entity == null) {
+            if (message instanceof HttpEntityEnclosingRequest) {
+                entity = ((HttpEntityEnclosingRequest) message).getEntity();
+            }
+        }
+
+        if (entity == null) {
+            if (message instanceof HttpResponse) {
+                entity = ((HttpResponse) message).getEntity();
+            }
         }
 
         return entity;
@@ -284,6 +293,24 @@ public abstract class HTTPTask extends AbstractClasspathTask {
 
     /**
      * {@link.uri http://ant.apache.org/ Ant}
+     * {@link org.apache.tools.ant.Task} to DELETE.
+     *
+     * {@bean.info}
+     */
+    @AntTask("http-delete")
+    public static class Delete extends HTTPTask {
+
+        /**
+         * Sole constructor.
+         */
+        public Delete() { super(); }
+
+        @Override
+        protected HttpUriRequest request() { return new HttpDelete(); }
+    }
+
+    /**
+     * {@link.uri http://ant.apache.org/ Ant}
      * {@link org.apache.tools.ant.Task} to GET.
      *
      * {@bean.info}
@@ -316,6 +343,24 @@ public abstract class HTTPTask extends AbstractClasspathTask {
 
         @Override
         protected HttpUriRequest request() { return new HttpPost(); }
+    }
+
+    /**
+     * {@link.uri http://ant.apache.org/ Ant}
+     * {@link org.apache.tools.ant.Task} to PUT.
+     *
+     * {@bean.info}
+     */
+    @AntTask("http-put")
+    public static class Put extends HTTPTask {
+
+        /**
+         * Sole constructor.
+         */
+        public Put() { super(); }
+
+        @Override
+        protected HttpUriRequest request() { return new HttpPut(); }
     }
 
     /**
