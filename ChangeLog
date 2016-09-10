@@ -1,3 +1,12 @@
+2016-09-10  Allen D. Ball  <ball@sol.local>
+
+	* src/main/java/ball/http/ant/taskdefs/HTTPTask.java:
+	Refactored to provide an abstract base class for any HTTP API
+	task.
+	Implement HttpRequestInterceptor and HttpResponseInterceptor to
+	log messages.
+	Initialize Task attributes from Project Properties.
+
 2016-08-27  Allen D. Ball  <ball@sol.local>
 
 	* src/main/java/ball/http/ant/taskdefs/HTTPTask.java:
