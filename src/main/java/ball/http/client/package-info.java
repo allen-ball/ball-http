@@ -9,6 +9,6 @@
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  */
 @Manifest.Section
-package ball.http;
+package ball.http.client;
 
 import ball.annotation.Manifest;

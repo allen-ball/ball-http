@@ -1,5 +1,8 @@
 2016-09-10  Allen D. Ball  <ball@sol.local>
 
+	* Created AnnotatedHttpUriRequest, annotaions, anotation
+	processors, and subclass implementations.
+
 	* src/main/java/ball/http/ant/taskdefs/HTTPTask.java:
 	Refactored to provide an abstract base class for any HTTP API
 	task.
