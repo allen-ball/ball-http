@@ -171,25 +171,29 @@ public abstract class HTTPTask extends AbstractClasspathTask
      */
     protected void log(String type, HttpEntity entity) {
         if (entity != null) {
-            OutputStream out = null;
+            if (entity.isRepeatable()) {
+                OutputStream out = null;
 
-            try {
-                ReaderWriterDataSource ds =
-                    new ReaderWriterDataSource(null, type);
+                try {
+                    ReaderWriterDataSource ds =
+                        new ReaderWriterDataSource(null, type);
 
-                out = ds.getOutputStream();
-                entity.writeTo(out);
-                out.close();
+                    out = ds.getOutputStream();
+                    entity.writeTo(out);
+                    out.close();
 
-                String string = ds.toString();
+                    String string = ds.toString();
 
-                if (! isNil(string)) {
-                    log(NIL);
-                    log(string);
+                    if (! isNil(string)) {
+                        log(NIL);
+                        log(string);
+                    }
+                } catch (IOException exception) {
+                } finally {
+                    IOUtil.close(out);
                 }
-            } catch (IOException exception) {
-            } finally {
-                IOUtil.close(out);
+            } else {
+                log(String.valueOf(entity));
             }
         }
     }

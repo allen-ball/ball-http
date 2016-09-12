@@ -1,5 +1,9 @@
 2016-09-11  Allen D. Ball  <ball@sol.local>
 
+	* src/main/java/ball/http/ant/taskdefs/HTTPTask.java:
+	In log(HttpEntity), do not call HttpEntity.writeTo(OutputStream)
+	if it is not repeatable.
+
 	* src/main/java/ball/http/annotation/processing/URISpecificationProcessor.java:
 	Use URIBuilder to test URISpecification.value().
 
