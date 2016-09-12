@@ -113,10 +113,8 @@ public interface AnnotatedHttpUriRequest extends HttpUriRequest {
          * {@link AnnotatedHttpUriRequest#getAllHeaders()}.
          *
          * @param       request         The {@link AnnotatedHttpUriRequest}.
-         *
-         * @return      The array of {@link Header}s.
          */
-        public Header[] getAllHeaders(AnnotatedHttpUriRequest request) {
+        public void setAnnotatedHeaders(AnnotatedHttpUriRequest request) {
             try {
                 for (Map.Entry<String,Object> entry :
                          NameValueMapFactory.getDefault()
@@ -130,8 +128,6 @@ public interface AnnotatedHttpUriRequest extends HttpUriRequest {
             } catch (Exception exception) {
                 throw new IllegalStateException(exception);
             }
-
-            return request.getAllHeaders();
         }
 
         @Override

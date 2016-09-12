@@ -8,6 +8,7 @@ package ball.http.client.method;
 import ball.http.client.entity.JSONEntity;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import java.net.URI;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
@@ -38,6 +39,13 @@ public abstract class AnnotatedHttpPost extends HttpPost
 
     @Override
     public URI getURI() { return AnnotatedHttpUriRequest.IMPL.getURI(this); }
+
+    @Override
+    public Header[] getAllHeaders() {
+        AnnotatedHttpUriRequest.IMPL.setAnnotatedHeaders(this);
+
+        return super.getAllHeaders();
+    }
 
     @Override
     public HttpEntity getEntity() {

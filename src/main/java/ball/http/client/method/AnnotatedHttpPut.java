@@ -6,6 +6,7 @@
 package ball.http.client.method;
 
 import java.net.URI;
+import org.apache.http.Header;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.utils.URIBuilder;
 
@@ -30,4 +31,11 @@ public abstract class AnnotatedHttpPut extends HttpPut
 
     @Override
     public URI getURI() { return AnnotatedHttpUriRequest.IMPL.getURI(this); }
+
+    @Override
+    public Header[] getAllHeaders() {
+        AnnotatedHttpUriRequest.IMPL.setAnnotatedHeaders(this);
+
+        return super.getAllHeaders();
+    }
 }
