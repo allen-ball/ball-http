@@ -1,3 +1,8 @@
+2016-09-11  Allen D. Ball  <ball@sol.local>
+
+	* src/main/java/ball/http/annotation/processing/URISpecificationProcessor.java:
+	Use URIBuilder to test URISpecification.value().
+
 2016-09-10  Allen D. Ball  <ball@sol.local>
 
 	* Created AnnotatedHttpUriRequest, annotaions, anotation

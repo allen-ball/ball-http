@@ -10,7 +10,6 @@ import ball.annotation.processing.AbstractAnnotationProcessor;
 import ball.annotation.processing.For;
 import ball.http.annotation.URISpecification;
 import ball.http.client.method.AnnotatedHttpUriRequest;
-import java.net.URI;
 import java.nio.charset.Charset;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
@@ -19,6 +18,7 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import org.apache.http.client.utils.URIBuilder;
 
 import static ball.util.MapUtil.getByKeyToString;
 import static javax.tools.Diagnostic.Kind.ERROR;
@@ -64,14 +64,14 @@ public class URISpecificationProcessor extends AbstractAnnotationProcessor {
 
                 if (value != null) {
                     try {
-                        new URI((String) value.getValue());
+                        new URIBuilder((String) value.getValue());
                     } catch (Exception exception) {
                         print(ERROR,
                               element,
                               element.getKind() + " annotated with "
                               + AT + annotation.getSimpleName()
                               + " but cannot convert `" + value.toString()
-                              + "' to " + URI.class.getName());
+                              + "' to " + URIBuilder.class.getName());
                     }
                 }
 
