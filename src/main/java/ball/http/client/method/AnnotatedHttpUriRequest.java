@@ -56,7 +56,7 @@ public interface AnnotatedHttpUriRequest extends HttpUriRequest {
     /**
      * {@inheritDoc}
      *
-     * @see AnnotatedHttpUriRequest.Impl#getAllHeaders(AnnotatedHttpUriRequest)
+     * @see AnnotatedHttpUriRequest.Impl#setAnnotatedHeaders(AnnotatedHttpUriRequest)
      */
     @Override
     public Header[] getAllHeaders();
