@@ -42,6 +42,7 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
+/* import org.apache.http.entity.BufferedHttpEntity; */
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -93,7 +94,21 @@ public abstract class HTTPTask extends AbstractClasspathTask
     protected HttpClientContext context() { return new HttpClientContext(); }
 
     @Override
-    public void process(HttpRequest request, HttpContext context) {
+    public void process(HttpRequest request,
+                        HttpContext context) throws IOException {
+/*
+        if (request instanceof HttpEntityEnclosingRequest) {
+            HttpEntity entity =
+                ((HttpEntityEnclosingRequest) request).getEntity();
+
+            if (entity != null) {
+                if (! entity.isRepeatable()) {
+                    ((HttpEntityEnclosingRequest) request)
+                        .setEntity(new BufferedHttpEntity(entity));
+                }
+            }
+        }
+*/
         log(NIL);
         log(context);
         log(NIL);
@@ -101,7 +116,17 @@ public abstract class HTTPTask extends AbstractClasspathTask
     }
 
     @Override
-    public void process(HttpResponse response, HttpContext context) {
+    public void process(HttpResponse response,
+                        HttpContext context) throws IOException {
+/*
+        HttpEntity entity = response.getEntity();
+
+        if (entity != null) {
+            if ((! entity.isRepeatable()) && (! entity.isChunked())) {
+                response.setEntity(new BufferedHttpEntity(entity));
+            }
+        }
+*/
         log(NIL);
         log(context);
         log(NIL);
