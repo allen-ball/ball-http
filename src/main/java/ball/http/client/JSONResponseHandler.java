@@ -15,7 +15,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.impl.client.AbstractResponseHandler;
 
 /**
- * JSON {@link org.apache.http.HttpResponseHandler}.
+ * JSON {@link org.apache.http.client.ResponseHandler}.
  *
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$
