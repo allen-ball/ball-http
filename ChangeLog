@@ -1,3 +1,9 @@
+2016-09-16  Allen D. Ball  <ball@sol.local>
+
+	* src/main/java/ball/http/client/method/AnnotatedHttpPost.java:
+	Added getEntityObject() and setEntityObject(Object) to allow
+	implementations to specify the underlying Object for getEntity().
+
 2016-09-11  Allen D. Ball  <ball@sol.local>
 
 	* src/main/java/ball/http/client/JSONResponseHandler.java:

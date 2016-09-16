@@ -26,11 +26,32 @@ import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE;
                 setterVisibility=NONE)
 public abstract class AnnotatedHttpPost extends HttpPost
                                         implements AnnotatedHttpUriRequest {
+    private Object object = null;
 
     /**
      * Sole constructor.
      */
-    protected AnnotatedHttpPost() { super(); }
+    protected AnnotatedHttpPost() {
+        super();
+
+        setEntityObject(this);
+    }
+
+    /**
+     * Method to get the {@link Object} that represesnts the
+     * {@link HttpEntity}.
+     *
+     * @return  The {@link Object}.
+     */
+    protected Object getEntityObject() { return object; }
+
+    /**
+     * Method to set the {@link Object} that represesnts the
+     * {@link HttpEntity}.
+     *
+     * @param   object          The {@link Object}.
+     */
+    protected void setEntityObject(Object object) { this.object = object; }
 
     @Override
     public URIBuilder getURIBuilder() {
@@ -52,7 +73,7 @@ public abstract class AnnotatedHttpPost extends HttpPost
         HttpEntity entity = super.getEntity();
 
         if (entity == null) {
-            entity = new JSONEntity(this);
+            entity = new JSONEntity(getEntityObject());
         }
 
         return entity;
