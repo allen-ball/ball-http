@@ -1,3 +1,8 @@
+2016-09-17  Allen D. Ball  <ball@sol.local>
+
+	* src/main/java/ball/http/ant/taskdefs/HTTPTask.java:
+	Removed context() method.
+
 2016-09-16  Allen D. Ball  <ball@sol.local>
 
 	* src/main/java/ball/http/client/method/AnnotatedHttpPost.java:

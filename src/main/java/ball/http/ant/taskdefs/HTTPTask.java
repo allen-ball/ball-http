@@ -40,7 +40,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.client.utils.URIBuilder;
 /* import org.apache.http.entity.BufferedHttpEntity; */
 import org.apache.http.entity.StringEntity;
@@ -84,14 +83,6 @@ public abstract class HTTPTask extends AbstractClasspathTask
      * @return  The {@link HttpClientBuilder}.
      */
     protected HttpClientBuilder builder() { return builder; }
-
-    /**
-     * Method to allow subclasses to configure the
-     * {@link HttpClientContext}.
-     *
-     * @return      The {@link HttpClientContext}.
-     */
-    protected HttpClientContext context() { return new HttpClientContext(); }
 
     @Override
     public void process(HttpRequest request,
@@ -365,12 +356,11 @@ public abstract class HTTPTask extends AbstractClasspathTask
             try {
                 client = builder().build();
 
-                HttpContext context = context();
                 HttpUriRequest request = request();
 
                 configure(request);
 
-                HttpResponse response = client.execute(request, context);
+                HttpResponse response = client.execute(request);
             } catch (BuildException exception) {
                 throw exception;
             } catch (Throwable throwable) {
