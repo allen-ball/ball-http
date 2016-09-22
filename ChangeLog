@@ -1,3 +1,10 @@
+2016-09-21  Allen D. Ball  <ball@sol.local>
+
+	* src/main/java/ball/http/client/JSONResponseHandler.java,
+	src/main/java/ball/http/client/entity/JSONEntity.java,
+	src/main/java/ball/http/client/method/AnnotatedHttpPost.java:
+	Allow ObjectMapper instance to be specified.
+
 2016-09-17  Allen D. Ball  <ball@sol.local>
 
 	* src/main/java/ball/http/ant/taskdefs/HTTPTask.java:

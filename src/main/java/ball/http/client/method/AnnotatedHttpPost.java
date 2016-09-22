@@ -7,6 +7,7 @@ package ball.http.client.method;
 
 import ball.http.client.entity.JSONEntity;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -26,6 +27,7 @@ import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE;
                 setterVisibility=NONE)
 public abstract class AnnotatedHttpPost extends HttpPost
                                         implements AnnotatedHttpUriRequest {
+    private ObjectMapper mapper = null;
     private Object object = null;
 
     /**
@@ -35,6 +37,24 @@ public abstract class AnnotatedHttpPost extends HttpPost
         super();
 
         setEntityObject(this);
+    }
+
+    /**
+     * Method to get the {@link ObjectMapper} to serialize the
+     * {@link HttpEntity}.
+     *
+     * @return  The {@link ObjectMapper}.
+     */
+    protected ObjectMapper getObjectMapper() { return mapper; }
+
+    /**
+     * Method to set the {@link ObjectMapper} to serialize the
+     * {@link HttpEntity}.
+     *
+     * @param   mapper          The {@link ObjectMapper}.
+     */
+    protected void setObjectMapper(ObjectMapper mapper) {
+        this.mapper = mapper;
     }
 
     /**
@@ -73,7 +93,7 @@ public abstract class AnnotatedHttpPost extends HttpPost
         HttpEntity entity = super.getEntity();
 
         if (entity == null) {
-            entity = new JSONEntity(getEntityObject());
+            entity = new JSONEntity(getObjectMapper(), getEntityObject());
         }
 
         return entity;

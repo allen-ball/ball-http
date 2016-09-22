@@ -25,10 +25,23 @@ public class JSONResponseHandler<T> extends AbstractResponseHandler<T> {
         new ObjectMapper()
         .configure(SerializationFeature.INDENT_OUTPUT, true);
 
+    private final ObjectMapper mapper;
+
     /**
-     * Sole constructor.
+     * No-argument constructor.
      */
-    public JSONResponseHandler() { super(); }
+    public JSONResponseHandler() { this(null); }
+
+    /**
+     * Constructor to specify an {@link ObjectMapper}.
+     *
+     * @param   mapper          The {@link ObjectMapper}.
+     */
+    public JSONResponseHandler(ObjectMapper mapper) {
+        super();
+
+        this.mapper = (mapper != null) ? mapper : MAPPER;
+    }
 
     @Override
     public T handleEntity(HttpEntity entity) throws IOException {
@@ -39,7 +52,7 @@ public class JSONResponseHandler<T> extends AbstractResponseHandler<T> {
 
             try {
                 in = entity.getContent();
-                object = MAPPER.readValue(in, new TypeReference<T>() { });
+                object = mapper.readValue(in, new TypeReference<T>() { });
             } finally {
                 IOUtil.close(in);
             }

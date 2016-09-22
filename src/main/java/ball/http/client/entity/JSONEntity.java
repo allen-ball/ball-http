@@ -31,15 +31,27 @@ public class JSONEntity extends AbstractHttpEntity {
         new ObjectMapper()
         .configure(SerializationFeature.INDENT_OUTPUT, true);
 
+    private final ObjectMapper mapper;
     private final Object object;
 
     /**
-     * Sole constructor.
+     * Construct a JSON entity from an {@link Object}.
      *
      * @param   object          The {@link Object} to serialize.
      */
-    public JSONEntity(Object object) {
+    public JSONEntity(Object object) { this(null, object); }
+
+    /**
+     * Construct a JSON entity from an {@link Object} with the specified
+     * {@link ObjectMapper}.
+     *
+     * @param   mapper          The {@link ObjectMapper}.
+     * @param   object          The {@link Object} to serialize.
+     */
+    public JSONEntity(ObjectMapper mapper, Object object) {
         super();
+
+        this.mapper = (mapper != null) ? mapper : MAPPER;
 
         if (object != null) {
             this.object = object;
@@ -74,7 +86,7 @@ public class JSONEntity extends AbstractHttpEntity {
 
     @Override
     public void writeTo(OutputStream out) throws IOException {
-        MAPPER.writeValue(out, object);
+        mapper.writeValue(out, object);
     }
 
     @Override
