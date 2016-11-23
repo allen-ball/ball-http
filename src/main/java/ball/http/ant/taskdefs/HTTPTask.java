@@ -8,20 +8,15 @@ package ball.http.ant.taskdefs;
 import ball.activation.ReaderWriterDataSource;
 import ball.io.IOUtil;
 import ball.swing.table.MapTableModel;
-import ball.util.AbstractPredicate;
 import ball.util.BeanMap;
-import ball.util.FilteredIterator;
-import ball.util.MapUtil;
 import ball.util.PropertiesImpl;
 import ball.util.ant.taskdefs.AbstractClasspathTask;
 import ball.util.ant.taskdefs.AntTask;
 import ball.util.ant.types.StringAttributeType;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -295,7 +290,15 @@ public abstract class HTTPTask extends AbstractClasspathTask
                                                      Map<?,?> map) {
             PropertiesImpl properties = new PropertiesImpl();
 
-            MapUtil.copy(new EntryKeyPrefixedWith(prefix, map), properties);
+            for (Map.Entry<?,?> entry : map.entrySet()) {
+                Object key = entry.getKey();
+                String string = (key != null) ? key.toString() : null;
+
+                if ((! isNil(string)) && string.startsWith(prefix)) {
+                    properties.put(string.substring(prefix.length()),
+                                   entry.getValue());
+                }
+            }
 
             return properties;
         }
@@ -368,50 +371,6 @@ public abstract class HTTPTask extends AbstractClasspathTask
                 throw new BuildException(throwable);
             } finally {
                 IOUtil.close(client);
-            }
-        }
-
-        private class EntryKeyPrefixedWith
-            extends FilteredIterator<Map.Entry<?,?>> {
-            public EntryKeyPrefixedWith(String prefix, Map<?,?> map) {
-                this(prefix, map.entrySet());
-            }
-
-            public EntryKeyPrefixedWith(String prefix,
-                                        Iterable<? extends Map.Entry<?,?>> iterable) {
-                super(new KeyStartsWith(prefix), iterable);
-            }
-
-            @Override
-            public KeyStartsWith getPredicate() {
-                return (KeyStartsWith) super.getPredicate();
-            }
-
-            @Override
-            public Map.Entry<?,?> next() {
-                Map.Entry<?,?> entry = super.next();
-                Object key =
-                    entry.getKey().toString()
-                    .substring(getPredicate().getPrefix().length());
-
-                return new AbstractMap.SimpleEntry<>(key, entry.getValue());
-            }
-        }
-
-        private class KeyStartsWith extends AbstractPredicate<Map.Entry<?,?>> {
-            private final String prefix;
-
-            public KeyStartsWith(String prefix) {
-                super();
-
-                this.prefix = prefix;
-            }
-
-            public String getPrefix() { return prefix; }
-
-            @Override
-            public boolean apply(Map.Entry<?,?> entry) {
-                return entry.getKey().toString().startsWith(prefix);
             }
         }
     }
