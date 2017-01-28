@@ -1,3 +1,7 @@
+2017-01-28  Allen D. Ball  <ball@sol.local>
+
+	* build.xml: Added "http-delete" and "http-put" targets.
+
 2016-09-21  Allen D. Ball  <ball@sol.local>
 
 	* src/main/java/ball/http/client/JSONResponseHandler.java,
