@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2016 Allen D. Ball.  All rights reserved.
+ * Copyright 2016, 2017 Allen D. Ball.  All rights reserved.
  */
 package ball.http.ant.taskdefs;
 
@@ -9,6 +9,7 @@ import ball.activation.ReaderWriterDataSource;
 import ball.io.IOUtil;
 import ball.swing.table.MapTableModel;
 import ball.util.BeanMap;
+import ball.util.MapUtil;
 import ball.util.PropertiesImpl;
 import ball.util.ant.taskdefs.AbstractClasspathTask;
 import ball.util.ant.taskdefs.AntTask;
@@ -36,7 +37,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
-/* import org.apache.http.entity.BufferedHttpEntity; */
+import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -46,6 +47,7 @@ import org.apache.tools.ant.BuildException;
 import static ball.activation.ReaderWriterDataSource.CONTENT_TYPE;
 import static ball.util.StringUtil.NIL;
 import static ball.util.StringUtil.isNil;
+import static org.apache.tools.ant.Project.toBoolean;
 
 /**
  * Abstract {@link.uri http://ant.apache.org/ Ant} base
@@ -61,6 +63,7 @@ public abstract class HTTPTask extends AbstractClasspathTask
                                           HttpResponseInterceptor {
     private static final String DOT = ".";
 
+    private boolean buffer = false;
     private final HttpClientBuilder builder =
         HttpClientBuilder.create()
         .addInterceptorLast((HttpRequestInterceptor) this)
@@ -70,6 +73,20 @@ public abstract class HTTPTask extends AbstractClasspathTask
      * Sole constructor.
      */
     protected HTTPTask() { super(); }
+
+    public boolean getBuffer() { return buffer; }
+    public void setBuffer(boolean buffer) { this.buffer = buffer; }
+    public void setBuffer(String string) { setBuffer(toBoolean(string)); }
+
+    @Override
+    public void init() throws BuildException {
+        super.init();
+
+        PropertiesImpl properties = new PropertiesImpl();
+
+        MapUtil.copy(getProject().getProperties(), properties);
+        properties.configure(this);
+    }
 
     /**
      * Method to allow subclasses to configure the
@@ -82,19 +99,20 @@ public abstract class HTTPTask extends AbstractClasspathTask
     @Override
     public void process(HttpRequest request,
                         HttpContext context) throws IOException {
-/*
         if (request instanceof HttpEntityEnclosingRequest) {
             HttpEntity entity =
                 ((HttpEntityEnclosingRequest) request).getEntity();
 
             if (entity != null) {
                 if (! entity.isRepeatable()) {
-                    ((HttpEntityEnclosingRequest) request)
-                        .setEntity(new BufferedHttpEntity(entity));
+                    if (getBuffer()) {
+                        ((HttpEntityEnclosingRequest) request)
+                            .setEntity(new BufferedHttpEntity(entity));
+                    }
                 }
             }
         }
-*/
+
         log(NIL);
         log(context);
         log(NIL);
@@ -104,15 +122,16 @@ public abstract class HTTPTask extends AbstractClasspathTask
     @Override
     public void process(HttpResponse response,
                         HttpContext context) throws IOException {
-/*
         HttpEntity entity = response.getEntity();
 
         if (entity != null) {
-            if ((! entity.isRepeatable()) && (! entity.isChunked())) {
-                response.setEntity(new BufferedHttpEntity(entity));
+            if (! entity.isRepeatable()) {
+                if (getBuffer()) {
+                    response.setEntity(new BufferedHttpEntity(entity));
+                }
             }
         }
-*/
+
         log(NIL);
         log(context);
         log(NIL);
