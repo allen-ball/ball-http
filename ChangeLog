@@ -1,3 +1,10 @@
+2017-03-05  Allen D. Ball  <ball@sol.local>
+
+	* src/main/java/ball/http/client/method/AnnotatedHttpHead.java,
+	src/main/java/ball/http/client/method/AnnotatedHttpOptions.java,
+	src/main/java/ball/http/client/method/AnnotatedHttpPatch.java:
+	Initial writing.
+
 2017-01-28  Allen D. Ball  <ball@sol.local>
 
 	* src/main/java/ball/http/ant/taskdefs/HTTPTask.java:
