@@ -34,6 +34,30 @@
     <http-get classpathref="build.classpath"/>
   </target>
 
+  <target name="http-head"
+          description="--> Invokes &lt;http-head/&gt; task."
+          depends="jar-classes">
+    <taskdef classpathref="build.classpath"
+             resource="ball/http/ant/defaults.properties"/>
+    <http-head classpathref="build.classpath"/>
+  </target>
+
+  <target name="http-options"
+          description="--> Invokes &lt;http-options/&gt; task."
+          depends="jar-classes">
+    <taskdef classpathref="build.classpath"
+             resource="ball/http/ant/defaults.properties"/>
+    <http-options classpathref="build.classpath"/>
+  </target>
+
+  <target name="http-patch"
+          description="--> Invokes &lt;http-patch/&gt; task."
+          depends="jar-classes">
+    <taskdef classpathref="build.classpath"
+             resource="ball/http/ant/defaults.properties"/>
+    <http-patch classpathref="build.classpath"/>
+  </target>
+
   <target name="http-post"
           description="--> Invokes &lt;http-post/&gt; task."
           depends="jar-classes">

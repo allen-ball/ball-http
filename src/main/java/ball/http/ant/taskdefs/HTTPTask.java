@@ -32,6 +32,9 @@ import org.apache.http.HttpResponseInterceptor;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.methods.HttpOptions;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -428,6 +431,60 @@ public abstract class HTTPTask extends AbstractClasspathTask
 
         @Override
         protected HttpUriRequest request() { return new HttpGet(); }
+    }
+
+    /**
+     * {@link.uri http://ant.apache.org/ Ant}
+     * {@link org.apache.tools.ant.Task} to HEAD.
+     *
+     * {@bean.info}
+     */
+    @AntTask("http-head")
+    public static class Head extends Request {
+
+        /**
+         * Sole constructor.
+         */
+        public Head() { super(); }
+
+        @Override
+        protected HttpUriRequest request() { return new HttpHead(); }
+    }
+
+    /**
+     * {@link.uri http://ant.apache.org/ Ant}
+     * {@link org.apache.tools.ant.Task} to OPTIONS.
+     *
+     * {@bean.info}
+     */
+    @AntTask("http-options")
+    public static class Options extends Request {
+
+        /**
+         * Sole constructor.
+         */
+        public Options() { super(); }
+
+        @Override
+        protected HttpUriRequest request() { return new HttpOptions(); }
+    }
+
+    /**
+     * {@link.uri http://ant.apache.org/ Ant}
+     * {@link org.apache.tools.ant.Task} to PATCH.
+     *
+     * {@bean.info}
+     */
+    @AntTask("http-patch")
+    public static class Patch extends Request {
+
+        /**
+         * Sole constructor.
+         */
+        public Patch() { super(); }
+
+        @Override
+        protected HttpUriRequest request() { return new HttpPatch(); }
     }
 
     /**
