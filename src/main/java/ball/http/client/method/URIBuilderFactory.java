@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2016 Allen D. Ball.  All rights reserved.
+ * Copyright 2016, 2017 Allen D. Ball.  All rights reserved.
  */
 package ball.http.client.method;
 
@@ -70,35 +70,7 @@ public class URIBuilderFactory extends Factory<URIBuilder> {
             URISpecification specification =
                 request.getClass().getAnnotation(URISpecification.class);
 
-            if (! isNil(specification.value())) {
-                builder = new URIBuilder(specification.value());
-            } else {
-                builder = new URIBuilder();
-            }
-
-            if (! isNil(specification.charset())) {
-                builder.setCharset(Charset.forName(specification.charset()));
-            }
-
-            if (! isNil(specification.scheme())) {
-                builder.setScheme(specification.scheme());
-            }
-
-            if (! isNil(specification.userInfo())) {
-                builder.setUserInfo(specification.userInfo());
-            }
-
-            if (! isNil(specification.host())) {
-                builder.setHost(specification.host());
-            }
-
-            if (specification.port() > 0) {
-                builder.setPort(specification.port());
-            }
-
-            if (! isNil(specification.path())) {
-                builder.setPath(specification.path());
-            }
+            builder = getInstance(specification);
 
             Class<? extends AnnotatedHttpUriRequest> type = request.getClass();
             BeanInfo info = Introspector.getBeanInfo(type);
@@ -203,6 +175,80 @@ public class URIBuilderFactory extends Factory<URIBuilder> {
                      .entrySet()) {
                 builder.addParameter(entry.getKey(),
                                      entry.getValue().toString());
+            }
+        } catch (RuntimeException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+
+        return builder;
+    }
+
+    /**
+     * Method to get an {@link URIBuilder} configured from a protcol
+     * interface method and class {@link URISpecification} annotations.
+     *
+     * @param   method          The interface {@link Method} or whose
+     *                          containing interface is annotaated with
+     *                          {@link URISpecification}.
+     *
+     * @return  The {@link URIBuilder}.
+     */
+    public URIBuilder getInstance(Method method) {
+        URISpecification specification =
+            method.getDeclaringClass().getAnnotation(URISpecification.class);
+
+        if (specification == null) {
+            specification = method.getAnnotation(URISpecification.class);
+        }
+
+        return getInstance(specification);
+    }
+
+    /**
+     * Method to get an {@link URIBuilder} configured from an
+     * {@link URISpecification} annotation.
+     *
+     * @param   specification   The {@link URISpecification} (may be
+     *                          {@code null}).
+     *
+     * @return  The {@link URIBuilder}.
+     */
+    public URIBuilder getInstance(URISpecification specification) {
+        URIBuilder builder = null;
+
+        try {
+            if (specification != null && (! isNil(specification.value()))) {
+                builder = new URIBuilder(specification.value());
+            } else {
+                builder = new URIBuilder();
+            }
+
+            if (specification != null) {
+                if (! isNil(specification.charset())) {
+                    builder.setCharset(Charset.forName(specification.charset()));
+                }
+
+                if (! isNil(specification.scheme())) {
+                    builder.setScheme(specification.scheme());
+                }
+
+                if (! isNil(specification.userInfo())) {
+                    builder.setUserInfo(specification.userInfo());
+                }
+
+                if (! isNil(specification.host())) {
+                    builder.setHost(specification.host());
+                }
+
+                if (specification.port() > 0) {
+                    builder.setPort(specification.port());
+                }
+
+                if (! isNil(specification.path())) {
+                    builder.setPath(specification.path());
+                }
             }
         } catch (RuntimeException exception) {
             throw exception;
