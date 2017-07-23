@@ -186,27 +186,6 @@ public class URIBuilderFactory extends Factory<URIBuilder> {
     }
 
     /**
-     * Method to get an {@link URIBuilder} configured from a protcol
-     * interface method and class {@link URISpecification} annotations.
-     *
-     * @param   method          The interface {@link Method} or whose
-     *                          containing interface is annotaated with
-     *                          {@link URISpecification}.
-     *
-     * @return  The {@link URIBuilder}.
-     */
-    public URIBuilder getInstance(Method method) {
-        URISpecification specification =
-            method.getDeclaringClass().getAnnotation(URISpecification.class);
-
-        if (specification == null) {
-            specification = method.getAnnotation(URISpecification.class);
-        }
-
-        return getInstance(specification);
-    }
-
-    /**
      * Method to get an {@link URIBuilder} configured from an
      * {@link URISpecification} annotation.
      *
