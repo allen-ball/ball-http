@@ -1,5 +1,9 @@
 2017-07-23  Allen D. Ball  <ball@sol>
 
+	* src/main/java/ball/http/annotation/URISpecification.java,
+	processing/URISpecificationProcessor.java:
+	Support annotating interfaces and interface methods.
+
 	* src/main/java/ball/http/client/method/URIBuilderFactory.java:
 	Added getInstance(URISpecification) method.
 

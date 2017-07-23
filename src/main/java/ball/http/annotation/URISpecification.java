@@ -10,19 +10,20 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import static ball.util.StringUtil.NIL;
+import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * {@link java.lang.annotation.Annotation} to provide an
- * {@link java.net.URI} specification,
+ * {@link java.net.URI} specification.
  *
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$
  */
 @Documented
 @Retention(RUNTIME)
-@Target({ TYPE })
+@Target({ TYPE, METHOD })
 public @interface URISpecification {
     String value() default NIL;
     String charset() default "UTF-8";

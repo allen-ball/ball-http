@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2016 Allen D. Ball.  All rights reserved.
+ * Copyright 2016, 2017 Allen D. Ball.  All rights reserved.
  */
 package ball.http.annotation.processing;
 
@@ -54,76 +54,94 @@ public class URISpecificationProcessor extends AbstractAnnotationProcessor {
     protected void process(RoundEnvironment env,
                            TypeElement annotation,
                            Element element) throws Exception {
+        AnnotationMirror mirror = getAnnotationMirror(element, annotation);
+        AnnotationValue value =
+            getByKeyToString(mirror.getElementValues(), "value()");
+
+        if (value != null) {
+            try {
+                new URIBuilder((String) value.getValue());
+            } catch (Exception exception) {
+                print(ERROR,
+                      element,
+                      element.getKind() + " annotated with "
+                      + AT + annotation.getSimpleName()
+                      + " but cannot convert `" + value.toString()
+                      + "' to " + URIBuilder.class.getName());
+            }
+        }
+
+        AnnotationValue charset =
+            getByKeyToString(mirror.getElementValues(), "charset()");
+
+        if (charset != null) {
+            try {
+                Charset.forName((String) charset.getValue());
+            } catch (Exception exception) {
+                print(ERROR,
+                      element,
+                      element.getKind() + " annotated with "
+                      + AT + annotation.getSimpleName()
+                      + " but cannot convert `" + charset.toString()
+                      + "' to " + Charset.class.getName());
+            }
+        }
+
+        AnnotationValue scheme =
+            getByKeyToString(mirror.getElementValues(), "scheme()");
+        AnnotationValue userInfo =
+            getByKeyToString(mirror.getElementValues(), "userInfo()");
+        AnnotationValue host =
+            getByKeyToString(mirror.getElementValues(), "host()");
+        AnnotationValue port =
+            getByKeyToString(mirror.getElementValues(), "port()");
+
+        if (port != null) {
+            try {
+                if (((Integer) port.getValue()) < 0) {
+                    throw new IllegalArgumentException();
+                }
+            } catch (Exception exception) {
+                print(ERROR,
+                      element,
+                      element.getKind() + " annotated with "
+                      + AT + annotation.getSimpleName()
+                      + " but cannot convert `" + port.toString()
+                      + "' to a positve " + Integer.class.getName());
+            }
+        }
+
+        AnnotationValue path =
+            getByKeyToString(mirror.getElementValues(), "path()");
+
         switch (element.getKind()) {
         case CLASS:
-            if (isAssignable(element.asType(), supertype.asType())) {
-                AnnotationMirror mirror =
-                    getAnnotationMirror(element, annotation);
-                AnnotationValue value =
-                    getByKeyToString(mirror.getElementValues(), "value()");
-
-                if (value != null) {
-                    try {
-                        new URIBuilder((String) value.getValue());
-                    } catch (Exception exception) {
-                        print(ERROR,
-                              element,
-                              element.getKind() + " annotated with "
-                              + AT + annotation.getSimpleName()
-                              + " but cannot convert `" + value.toString()
-                              + "' to " + URIBuilder.class.getName());
-                    }
-                }
-
-                AnnotationValue charset =
-                    getByKeyToString(mirror.getElementValues(), "charset()");
-
-                if (charset != null) {
-                    try {
-                        Charset.forName((String) charset.getValue());
-                    } catch (Exception exception) {
-                        print(ERROR,
-                              element,
-                              element.getKind() + " annotated with "
-                              + AT + annotation.getSimpleName()
-                              + " but cannot convert `" + charset.toString()
-                              + "' to " + Charset.class.getName());
-                    }
-                }
-
-                AnnotationValue scheme =
-                    getByKeyToString(mirror.getElementValues(), "scheme()");
-                AnnotationValue userInfo =
-                    getByKeyToString(mirror.getElementValues(), "userInfo()");
-                AnnotationValue host =
-                    getByKeyToString(mirror.getElementValues(), "host()");
-                AnnotationValue port =
-                    getByKeyToString(mirror.getElementValues(), "port()");
-
-                if (port != null) {
-                    try {
-                        if (((Integer) port.getValue()) < 0) {
-                            throw new IllegalArgumentException();
-                        }
-                    } catch (Exception exception) {
-                        print(ERROR,
-                              element,
-                              element.getKind() + " annotated with "
-                              + AT + annotation.getSimpleName()
-                              + " but cannot convert `" + port.toString()
-                              + "' to a positve " + Integer.class.getName());
-                    }
-                }
-
-                AnnotationValue path =
-                    getByKeyToString(mirror.getElementValues(), "path()");
-            } else {
+            if (! isAssignable(element.asType(), supertype.asType())) {
                 print(ERROR,
                       element,
                       element.getKind() + " annotated with "
                       + AT + annotation.getSimpleName()
                       + " but is not a subclass of "
                       + supertype.getQualifiedName());
+            }
+            break;
+
+        case INTERFACE:
+            break;
+
+        case METHOD:
+            switch (element.getEnclosingElement().getKind()) {
+            case INTERFACE:
+                break;
+
+            default:
+                print(ERROR,
+                      element,
+                      element.getKind() + " annotated with "
+                      + AT + annotation.getSimpleName()
+                      + " but is not a " + element.getKind()
+                      + " of an INTERFACE");
+                break;
             }
             break;
 
