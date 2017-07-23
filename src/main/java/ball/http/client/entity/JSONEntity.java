@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2016 Allen D. Ball.  All rights reserved.
+ * Copyright 2016, 2017 Allen D. Ball.  All rights reserved.
  */
 package ball.http.client.entity;
 
@@ -62,6 +62,13 @@ public class JSONEntity extends AbstractHttpEntity {
         setChunked(false);
         setContentType(APPLICATION_JSON.toString());
     }
+
+    /**
+     * Method to get the {@link Object} this entity represents.
+     *
+     * @return  The {@link Object}.
+     */
+    public Object getObject() { return object; }
 
     @Override
     public boolean isRepeatable() { return true; }

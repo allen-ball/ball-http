@@ -4,6 +4,9 @@
 	processing/URISpecificationProcessor.java:
 	Support annotating interfaces and interface methods.
 
+	* src/main/java/ball/http/client/entity/JSONEntity.java:
+	Added Object getter.
+
 	* src/main/java/ball/http/client/method/URIBuilderFactory.java:
 	Added getInstance(URISpecification) method.
 
