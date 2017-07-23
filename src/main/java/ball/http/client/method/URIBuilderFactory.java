@@ -36,7 +36,7 @@ import static ball.util.StringUtil.isNil;
  * @version $Revision$
  */
 public class URIBuilderFactory extends Factory<URIBuilder> {
-    private static final long serialVersionUID = 3452313094967103805L;
+    private static final long serialVersionUID = -3224958645975435635L;
 
     private static final URIBuilderFactory DEFAULT = new URIBuilderFactory();
 
