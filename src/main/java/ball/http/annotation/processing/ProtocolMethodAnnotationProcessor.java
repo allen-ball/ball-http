@@ -26,7 +26,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
-import org.apache.http.client.utils.URIBuilder;
 
 import static ball.http.ProtocolInvocationHandler.SUPPORTED_RETURN_TYPES;
 import static ball.util.MapUtil.getByKeyToString;
@@ -82,22 +81,6 @@ public class ProtocolMethodAnnotationProcessor
                         getAnnotationMirror(element, annotation);
                     AnnotationValue value =
                         getByKeyToString(mirror.getElementValues(), "value()");
-
-                    if (value != null) {
-                        if (! isNil((String) value.getValue())) {
-                            try {
-                                new URIBuilder((String) value.getValue());
-                            } catch (Exception exception) {
-                                print(ERROR,
-                                      element,
-                                      element.getKind() + " annotated with "
-                                      + AT + annotation.getSimpleName()
-                                      + " but cannot convert `"
-                                      + value.toString()
-                                      + "' to " + URIBuilder.class.getName());
-                            }
-                        }
-                    }
                     break;
 
                 default:

@@ -46,7 +46,7 @@ public class PathParameterProcessor
         AnnotationValue value =
             getByKeyToString(mirror.getElementValues(), "value()");
 
-        if (value != null || isNil(value.toString())) {
+        if (value == null || isNil(value.toString())) {
             print(ERROR,
                   element,
                   element.getKind() + " annotated with "

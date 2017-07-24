@@ -10,6 +10,8 @@ import ball.http.annotation.Entity;
 import ball.http.annotation.GET;
 import ball.http.annotation.HEAD;
 import ball.http.annotation.Header;
+import ball.http.annotation.JSON;
+import ball.http.annotation.JSONProperty;
 import ball.http.annotation.OPTIONS;
 import ball.http.annotation.PATCH;
 import ball.http.annotation.POST;
@@ -20,7 +22,6 @@ import ball.http.annotation.URISpecification;
 import ball.http.client.entity.JSONEntity;
 import ball.http.client.method.URIBuilderFactory;
 import ball.util.ClassOrder;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -51,6 +52,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.AbstractHttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
 
@@ -242,18 +244,27 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * Method to process a {@link Entity} parameter {@link Annotation}.
      *
      * @param   annotation      The {@link Entity} {@link Annotation}.
+     * @param   argument        The {@link HttpEntity}.
+     */
+    public void apply(Entity annotation, HttpEntity argument) {
+        if (! isNil(annotation.value())) {
+            ((AbstractHttpEntity) argument)
+                .setContentType(ContentType.parse(annotation.value())
+                                .toString());
+        }
+
+        ((HttpEntityEnclosingRequestBase) request).setEntity(argument);
+    }
+
+    /**
+     * Method to process a {@link Entity} parameter {@link Annotation}.
+     *
+     * @param   annotation      The {@link Entity} {@link Annotation}.
      * @param   argument        The {@link File} reepresenting the
      *                          {@link HttpEntity}.
      */
     public void apply(Entity annotation, File argument) {
-        FileEntity entity = new FileEntity(argument);
-
-        if (! isNil(annotation.value())) {
-            entity.setContentType(ContentType.parse(annotation.value())
-                                  .toString());
-        }
-
-        ((HttpEntityEnclosingRequestBase) request).setEntity(entity);
+        apply(annotation, new FileEntity(argument));
     }
 
     /**
@@ -268,12 +279,23 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
-     * Method to process a {@link JsonProperty} parameter {@link Annotation}.
+     * Method to process a {@link JSON} parameter {@link Annotation}.
      *
-     * @param   annotation      The {@link JsonProperty} {@link Annotation}.
-     * @param   argument        The {@link JsonProperty} value.
+     * @param   annotation      The {@link JSON} {@link Annotation}.
+     * @param   argument        The {@link JSON} value.
      */
-    public void apply(JsonProperty annotation, Object argument) {
+    public void apply(JSON annotation, Object argument) {
+        ((HttpEntityEnclosingRequestBase) request)
+            .setEntity(new JSONEntity(MAPPER, argument));
+    }
+
+    /**
+     * Method to process a {@link JSONProperty} parameter {@link Annotation}.
+     *
+     * @param   annotation      The {@link JSONProperty} {@link Annotation}.
+     * @param   argument        The {@link JSONProperty} value.
+     */
+    public void apply(JSONProperty annotation, Object argument) {
         JSONEntity entity =
             (JSONEntity)
             ((HttpEntityEnclosingRequestBase) request)
@@ -474,7 +496,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
                 getMethod(AS + type.getSimpleName(), HttpResponse.class);
 
             if (method != null) {
-                object = method.invoke(response);
+                object = method.invoke(this, response);
             }
         } catch (IllegalAccessException exception) {
         } catch (InvocationTargetException exception) {
