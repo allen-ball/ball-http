@@ -154,8 +154,8 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @param   protocols       Annotated {@link Class}es (interfaces)
      *                          describing the service.
      */
-    public ProtocolInvocationHandler(HttpClient client,
-                                     Class<?>... protocols) {
+    protected ProtocolInvocationHandler(HttpClient client,
+                                        Class<?>... protocols) {
         if (client != null) {
             this.client = client;
         } else {
@@ -544,28 +544,33 @@ public class ProtocolInvocationHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy,
-                         Method method, Object[] arguments) throws Throwable {
+                         Method method, Object[] argv) throws Throwable {
         Object result = null;
 
         if (protocols.contains(method.getDeclaringClass())) {
-            builder = URIBuilderFactory.getDefault().getInstance();
-            request = null;
-
-            apply(method.getDeclaringClass().getAnnotations());
-            apply(method.getAnnotations());
-            apply(method.getParameterAnnotations(),
-                  method.getParameterTypes(), arguments);
-
-            ((HttpRequestBase) request).setURI(builder.build());
-
             result =
                 as(method.getReturnType(),
-                   ((HttpClient) proxy).execute(request));
+                   ((HttpClient) proxy).execute(build(method, argv)));
         } else {
-            result = method.invoke(client, arguments);
+            result = method.invoke(client, argv);
         }
 
         return result;
+    }
+
+    private HttpUriRequest build(Method method,
+                                 Object... argv) throws Throwable {
+        builder = URIBuilderFactory.getDefault().getInstance();
+        request = null;
+
+        apply(method.getDeclaringClass().getAnnotations());
+        apply(method.getAnnotations());
+        apply(method.getParameterAnnotations(),
+              method.getParameterTypes(), argv);
+
+        ((HttpRequestBase) request).setURI(builder.build());
+
+        return request;
     }
 
     private void apply(Annotation[] annotations) throws Throwable {
@@ -590,9 +595,9 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     private void apply(Annotation[][] annotations,
-                       Class<?>[] types, Object[] arguments) throws Throwable {
+                       Class<?>[] types, Object[] argv) throws Throwable {
         for (int i = 0; i < annotations.length; i += 1) {
-            apply(annotations[i], types[i], arguments[i]);
+            apply(annotations[i], types[i], argv[i]);
         }
     }
 
