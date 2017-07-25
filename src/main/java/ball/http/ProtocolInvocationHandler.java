@@ -5,6 +5,7 @@
  */
 package ball.http;
 
+import ball.activation.ByteArrayDataSource;
 import ball.http.annotation.DELETE;
 import ball.http.annotation.Entity;
 import ball.http.annotation.GET;
@@ -18,6 +19,7 @@ import ball.http.annotation.POST;
 import ball.http.annotation.PUT;
 import ball.http.annotation.PathParameter;
 import ball.http.annotation.QueryParameter;
+import ball.http.annotation.URIParameter;
 import ball.http.annotation.URISpecification;
 import ball.http.client.entity.JSONEntity;
 import ball.http.client.method.URIBuilderFactory;
@@ -33,6 +35,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -74,9 +77,16 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     private static final String AS = "as";
 
     /**
-     * {@link Set} of supported protocol method {@link Annotation} types.
+     * {@link Set} of supported protocol interface and method
+     * {@link Annotation} types.
      */
-    public static final Set<Class<? extends Annotation>> SUPPORTED_ANNOTATION_TYPES;
+    public static final Set<Class<? extends Annotation>> SUPPORTED_INTERFACE_ANNOTATION_TYPES;
+
+    /**
+     * {@link Set} of supported protocol method parameter {@link Annotation}
+     * types.
+     */
+    public static final Set<Class<? extends Annotation>> SUPPORTED_PARAMETER_ANNOTATION_TYPES;
 
     /**
      * {@link Set} of supported protocol method return types.
@@ -84,7 +94,9 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     public static final Set<Class<?>> SUPPORTED_RETURN_TYPES;
 
     static {
-        TreeSet<Class<? extends Annotation>> annotations =
+        TreeSet<Class<? extends Annotation>> interfaceAnnotationTypes =
+            new TreeSet<>(ClassOrder.NAME);
+        TreeSet<Class<? extends Annotation>> parameterAnnotationTypes =
             new TreeSet<>(ClassOrder.NAME);
         TreeSet<Class<?>> returnTypes = new TreeSet<>(ClassOrder.NAME);
         Class<?>[] AS_PARAMETERS = new Class<?>[] { HttpResponse.class };
@@ -96,8 +108,24 @@ public class ProtocolInvocationHandler implements InvocationHandler {
              * apply(Annotation, ...)
              */
             if (name.equals(APPLY)) {
-                if (types.length > 0 && Annotation.class.isAssignableFrom(types[0])) {
-                    annotations.add(types[0].asSubclass(Annotation.class));
+                if (types.length > 0) {
+                    if (Annotation.class.isAssignableFrom(types[0])) {
+                        Class<? extends Annotation> type =
+                            types[0].asSubclass(Annotation.class);
+
+                        switch (types.length) {
+                        case 1:
+                            interfaceAnnotationTypes.add(type);
+                            break;
+
+                        case 2:
+                            parameterAnnotationTypes.add(type);
+                            break;
+
+                        default:
+                            break;
+                        }
+                    }
                 }
             }
             /*
@@ -112,7 +140,10 @@ public class ProtocolInvocationHandler implements InvocationHandler {
             }
         }
 
-        SUPPORTED_ANNOTATION_TYPES = Collections.unmodifiableSet(annotations);
+        SUPPORTED_INTERFACE_ANNOTATION_TYPES =
+            Collections.unmodifiableSet(interfaceAnnotationTypes);
+        SUPPORTED_PARAMETER_ANNOTATION_TYPES =
+            Collections.unmodifiableSet(parameterAnnotationTypes);
         SUPPORTED_RETURN_TYPES = Collections.unmodifiableSet(returnTypes);
     }
 
@@ -260,7 +291,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * Method to process a {@link Entity} parameter {@link Annotation}.
      *
      * @param   annotation      The {@link Entity} {@link Annotation}.
-     * @param   argument        The {@link File} reepresenting the
+     * @param   argument        The {@link File} representing the
      *                          {@link HttpEntity}.
      */
     public void apply(Entity annotation, File argument) {
@@ -271,11 +302,22 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * Method to process a {@link Header} parameter {@link Annotation}.
      *
      * @param   annotation      The {@link Header} {@link Annotation}.
-     * @param   argument        The {@link String} reepresenting the header
+     * @param   argument        The {@link String} representing the header
      *                          value.
      */
     public void apply(Header annotation, String argument) {
         request.setHeader(annotation.value(), argument);
+    }
+
+    /**
+     * Method to process a {@link Header} parameter {@link Annotation}.
+     *
+     * @param   annotation      The {@link Header} {@link Annotation}.
+     * @param   argument        The {@link Object} representing the header
+     *                          value.
+     */
+    public void apply(Header annotation, Object argument) {
+        apply(annotation, String.valueOf(argument));
     }
 
     /**
@@ -338,7 +380,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      *
      * @param   annotation      The {@link PathParameter}
      *                          {@link Annotation}.
-     * @param   argument        The {@link String} reepresenting the path
+     * @param   argument        The {@link String} representing the path
      *                          parameter value.
      */
     public void apply(PathParameter annotation, String argument) {
@@ -351,16 +393,65 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
+     * Method to process a {@link PathParameter} parameter {@link Annotation}.
+     *
+     * @param   annotation      The {@link PathParameter}
+     *                          {@link Annotation}.
+     * @param   argument        The {@link Object} representing the path
+     *                          parameter value.
+     */
+    public void apply(PathParameter annotation, Object argument) {
+        apply(annotation, String.valueOf(argument));
+    }
+
+    /**
      * Method to process a {@link QueryParameter} parameter
      * {@link Annotation}.
      *
      * @param   annotation      The {@link QueryParameter}
      *                          {@link Annotation}.
-     * @param   argument        The {@link String} reepresenting the query
+     * @param   argument        The {@link String} representing the query
      *                          parameter value.
      */
     public void apply(QueryParameter annotation, String argument) {
         builder.addParameter(annotation.value(), argument);
+    }
+
+    /**
+     * Method to process a {@link QueryParameter} parameter
+     * {@link Annotation}.
+     *
+     * @param   annotation      The {@link QueryParameter}
+     *                          {@link Annotation}.
+     * @param   argument        The {@link Object} representing the query
+     *                          parameter value.
+     */
+    public void apply(QueryParameter annotation, Object argument) {
+        apply(annotation, String.valueOf(argument));
+    }
+
+    /**
+     * Method to process a {@link URIParameter} parameter
+     * {@link Annotation}.
+     *
+     * @param   annotation      The {@link URIParameter}
+     *                          {@link Annotation}.
+     * @param   argument        The request {@link URI}.
+     */
+    public void apply(URIParameter annotation, URI argument) {
+        builder = URIBuilderFactory.getDefault().getInstance(argument);
+    }
+
+    /**
+     * Method to process a {@link URIParameter} parameter
+     * {@link Annotation}.
+     *
+     * @param   annotation      The {@link URIParameter}
+     *                          {@link Annotation}.
+     * @param   argument        The request URI as a {@link String}.
+     */
+    public void apply(URIParameter annotation, String argument) {
+        builder = URIBuilderFactory.getDefault().getInstance(argument);
     }
 
     /**
@@ -431,14 +522,25 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         return result;
     }
 
-    private void apply(Annotation[] annotations) {
+    private void apply(Annotation[] annotations) throws Throwable {
         for (int i = 0; i < annotations.length; i += 1) {
             apply(annotations[i]);
         }
     }
 
-    private void apply(Annotation annotation) {
-        apply(getApplyMethod(annotation.annotationType()), annotation);
+    private void apply(Annotation annotation) throws Throwable {
+        try {
+            if (SUPPORTED_INTERFACE_ANNOTATION_TYPES.contains(annotation.annotationType())) {
+                getClass()
+                    .getMethod(APPLY, annotation.annotationType())
+                    .invoke(this, annotation);
+            }
+        } catch (NoSuchMethodException exception) {
+            throw new IllegalStateException(exception);
+        } catch (IllegalAccessException exception) {
+        } catch (InvocationTargetException exception) {
+            throw exception.getTargetException();
+        }
     }
 
     private void apply(Annotation[][] annotations,
@@ -457,65 +559,38 @@ public class ProtocolInvocationHandler implements InvocationHandler {
 
     private void apply(Annotation annotation,
                        Class<?> type, Object argument) throws Throwable {
-        apply(getApplyMethod(annotation.annotationType(), type),
-              annotation, argument);
-    }
-
-    private void apply(Method method, Annotation annotation) {
         try {
-            if (method != null) {
-                method.invoke(this, annotation);
+            if (SUPPORTED_PARAMETER_ANNOTATION_TYPES.contains(annotation.annotationType())) {
+                getClass()
+                    .getMethod(APPLY, annotation.annotationType(), type)
+                    .invoke(this, annotation, argument);
             }
-        } catch (IllegalAccessException exception) {
-        } catch (InvocationTargetException exception) {
-        }
-    }
-
-    private void apply(Method method,
-                       Annotation annotation,
-                       Object argument) throws Throwable {
-        try {
-            if (method != null) {
-                method.invoke(this, annotation, argument);
+        } catch (NoSuchMethodException exception) {
+            if (! Object.class.equals(type)) {
+                apply(annotation, Object.class, argument);
+            } else {
+                throw new IllegalStateException(exception);
             }
         } catch (IllegalAccessException exception) {
         } catch (InvocationTargetException exception) {
             throw exception.getTargetException();
         }
-    }
-
-    private Method getApplyMethod(Class<?>... types) {
-        return getMethod(APPLY, types);
     }
 
     private Object as(Class<?> type, HttpResponse response) throws Throwable {
         Object object = null;
 
         try {
-            Method method =
-                getMethod(AS + type.getSimpleName(), HttpResponse.class);
-
-            if (method != null) {
-                object = method.invoke(this, response);
-            }
+            object =
+                getClass()
+                .getMethod(AS + type.getSimpleName(), HttpResponse.class)
+                .invoke(this, response);
         } catch (IllegalAccessException exception) {
         } catch (InvocationTargetException exception) {
             throw exception.getTargetException();
         }
 
-        return (object != null) ? type.cast(object) : response;
-    }
-
-    private Method getMethod(String name, Class<?>... types) {
-        Method method = null;
-
-        try {
-            method = getClass().getMethod(name, types);
-        } catch (NoSuchMethodException exception) {
-            method = null;
-        }
-
-        return method;
+        return type.cast(object);
     }
 
     @Override

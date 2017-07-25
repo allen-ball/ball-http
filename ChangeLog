@@ -1,14 +1,14 @@
 2017-07-24  Allen D. Ball  <ball@sol>
 
-	* src/main/java/ball/http/client/method/URIBuilderFactory.java:
-	Added getInstance(URI) and getInstance(String) methods.
-
-2017-07-23  Allen D. Ball  <ball@sol>
-
 	* src/main/java/ball/http/ProtocolClientBuilder.java,
 	src/main/java/ball/http/ProtocolInvocationHandler.java
 	(and associated Annotations and Processors):
 	Initial writing.
+
+	* src/main/java/ball/http/client/method/URIBuilderFactory.java:
+	Added getInstance(URI) and getInstance(String) methods.
+
+2017-07-23  Allen D. Ball  <ball@sol>
 
 	* src/main/java/ball/http/annotation/URISpecification.java,
 	processing/URISpecificationProcessor.java:
