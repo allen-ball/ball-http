@@ -26,11 +26,10 @@ import ball.http.client.method.URIBuilderFactory;
 import ball.util.ClassOrder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
 import java.io.File;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -68,11 +67,6 @@ import static ball.util.StringUtil.isNil;
  * @version $Revision$
  */
 public class ProtocolInvocationHandler implements InvocationHandler {
-    private static final ObjectMapper MAPPER =
-        new ObjectMapper()
-        .configure(SerializationFeature.INDENT_OUTPUT, true)
-        .setDateFormat(new ISO8601DateFormat());
-
     private static final String APPLY = "apply";
     private static final String AS = "as";
 
@@ -149,6 +143,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
 
     private final HttpClient client;
     private final LinkedHashSet<Class<?>> protocols = new LinkedHashSet<>();
+    private transient ObjectMapper mapper = null;
     private transient URIBuilder builder = null;
     private transient HttpUriRequest request = null;
 
@@ -168,6 +163,55 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         }
 
         Collections.addAll(this.protocols, protocols);
+    }
+
+    /**
+     * Method to get an {@link ObjectMapper} for {@code this}
+     * {@link ProtocolInvocationHandler}.  Will search the protocol
+     * interface fields for a configured {@link ObjectMapper} and use if
+     * found.  Otherwise, this method will return a new
+     * {@link ObjectMapper}.
+     *
+     * @return  An {@link ObjectMapper}.
+     */
+    public ObjectMapper getObjectMapper() {
+        synchronized(this) {
+            if (mapper == null) {
+                mapper = find(ObjectMapper.class);
+            }
+
+            if (mapper == null) {
+                mapper = new ObjectMapper();
+            }
+        }
+
+        return mapper;
+    }
+
+    private <T> T find(Class<T> type) {
+        T value = null;
+
+        for (Class<?> protocol : protocols) {
+            for (Field field : protocol.getFields()) {
+                if (type.isAssignableFrom(field.getType())) {
+                    try {
+                        value = type.cast(field.get(null));
+
+                        if (value != null) {
+                            break;
+                        }
+                    } catch (IllegalAccessException exception) {
+                        continue;
+                    }
+                }
+            }
+
+            if (value != null) {
+                break;
+            }
+        }
+
+        return value;
     }
 
     /**
@@ -328,7 +372,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      */
     public void apply(JSON annotation, Object argument) {
         ((HttpEntityEnclosingRequestBase) request)
-            .setEntity(new JSONEntity(MAPPER, argument));
+            .setEntity(new JSONEntity(getObjectMapper(), argument));
     }
 
     /**
@@ -344,7 +388,9 @@ public class ProtocolInvocationHandler implements InvocationHandler {
             .getEntity();
 
         if (entity == null) {
-            entity = new JSONEntity(MAPPER, MAPPER.createObjectNode());
+            entity =
+                new JSONEntity(getObjectMapper(),
+                               getObjectMapper().createObjectNode());
             ((HttpEntityEnclosingRequestBase) request).setEntity(entity);
         }
 
@@ -493,7 +539,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     public JsonNode asJsonNode(HttpResponse response) throws Exception {
         HttpEntity entity = asHttpEntity(response);
 
-        return (entity != null) ? MAPPER.readTree(entity.getContent()) : null;
+        return (entity != null) ? getObjectMapper().readTree(entity.getContent()) : null;
     }
 
     @Override
