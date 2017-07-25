@@ -93,7 +93,7 @@ public class JSONEntity extends AbstractHttpEntity {
 
     @Override
     public void writeTo(OutputStream out) throws IOException {
-        mapper.writeValue(out, object);
+        mapper.writeValue(out, getObject());
     }
 
     @Override
