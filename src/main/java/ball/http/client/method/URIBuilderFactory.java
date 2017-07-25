@@ -36,7 +36,7 @@ import static ball.util.StringUtil.isNil;
  * @version $Revision$
  */
 public class URIBuilderFactory extends Factory<URIBuilder> {
-    private static final long serialVersionUID = -3224958645975435635L;
+    private static final long serialVersionUID = -7164981349830843946L;
 
     private static final URIBuilderFactory DEFAULT = new URIBuilderFactory();
 
@@ -229,6 +229,48 @@ public class URIBuilderFactory extends Factory<URIBuilder> {
                     builder.setPath(specification.path());
                 }
             }
+        } catch (RuntimeException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+
+        return builder;
+    }
+
+    /**
+     * Method to get an {@link URIBuilder} configured from an {@link URI}.
+     *
+     * @param   uri             The {@link URI}.
+     *
+     * @return  The {@link URIBuilder}.
+     */
+    public URIBuilder getInstance(URI uri) {
+        URIBuilder builder = null;
+
+        try {
+            builder = new URIBuilder(uri);
+        } catch (RuntimeException exception) {
+            throw exception;
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+
+        return builder;
+    }
+
+    /**
+     * Method to get an {@link URIBuilder} configured from a {@link String}.
+     *
+     * @param   string          The URI {@link String}.
+     *
+     * @return  The {@link URIBuilder}.
+     */
+    public URIBuilder getInstance(String string) {
+        URIBuilder builder = null;
+
+        try {
+            builder = getInstance(new URI(string));
         } catch (RuntimeException exception) {
             throw exception;
         } catch (Exception exception) {
