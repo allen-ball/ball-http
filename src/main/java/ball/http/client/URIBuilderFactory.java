@@ -3,7 +3,7 @@
  *
  * Copyright 2016, 2017 Allen D. Ball.  All rights reserved.
  */
-package ball.http.client.method;
+package ball.http.client;
 
 import ball.http.annotation.URISpecification;
 import ball.util.Factory;
@@ -30,7 +30,7 @@ import static ball.util.StringUtil.isNil;
  * @version $Revision$
  */
 public class URIBuilderFactory extends Factory<URIBuilder> {
-    private static final long serialVersionUID = 1079661485545152286L;
+    private static final long serialVersionUID = -2591452634397209602L;
 
     private static final URIBuilderFactory DEFAULT = new URIBuilderFactory();
 
