@@ -9,9 +9,7 @@ import ball.annotation.ServiceProviderFor;
 import ball.annotation.processing.AbstractAnnotationProcessor;
 import ball.annotation.processing.For;
 import ball.http.annotation.URISpecification;
-import ball.http.client.method.AnnotatedHttpUriRequest;
 import java.nio.charset.Charset;
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.AnnotationMirror;
@@ -32,23 +30,11 @@ import static javax.tools.Diagnostic.Kind.ERROR;
 @ServiceProviderFor({ Processor.class })
 @For({ URISpecification.class })
 public class URISpecificationProcessor extends AbstractAnnotationProcessor {
-    private TypeElement supertype = null;
 
     /**
      * Sole constructor.
      */
     public URISpecificationProcessor() { super(); }
-
-    @Override
-    public void init(ProcessingEnvironment processingEnv) {
-        super.init(processingEnv);
-
-        try {
-            supertype = getTypeElementFor(AnnotatedHttpUriRequest.class);
-        } catch (Exception exception) {
-            print(ERROR, null, exception);
-        }
-    }
 
     @Override
     protected void process(RoundEnvironment env,
@@ -115,17 +101,6 @@ public class URISpecificationProcessor extends AbstractAnnotationProcessor {
             getByKeyToString(mirror.getElementValues(), "path()");
 
         switch (element.getKind()) {
-        case CLASS:
-            if (! isAssignable(element.asType(), supertype.asType())) {
-                print(ERROR,
-                      element,
-                      element.getKind() + " annotated with "
-                      + AT + annotation.getSimpleName()
-                      + " but is not a subclass of "
-                      + supertype.getQualifiedName());
-            }
-            break;
-
         case INTERFACE:
             break;
 
@@ -146,6 +121,11 @@ public class URISpecificationProcessor extends AbstractAnnotationProcessor {
             break;
 
         default:
+            print(ERROR,
+                  element,
+                  element.getKind() + " annotated with "
+                  + AT + annotation.getSimpleName()
+                  + " but is not an INTERFACE or INTERFACE METHOD");
             break;
         }
     }

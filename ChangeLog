@@ -31,11 +31,6 @@
 	* Added support for <http-head/>, <http-options/>, and
 	<http-patch> Ant Tasks and targets.
 
-	* src/main/java/ball/http/client/method/AnnotatedHttpHead.java,
-	src/main/java/ball/http/client/method/AnnotatedHttpOptions.java,
-	src/main/java/ball/http/client/method/AnnotatedHttpPatch.java:
-	Initial writing.
-
 2017-01-28  Allen D. Ball  <ball@sol.local>
 
 	* src/main/java/ball/http/ant/taskdefs/HTTPTask.java:
@@ -47,8 +42,7 @@
 2016-09-21  Allen D. Ball  <ball@sol.local>
 
 	* src/main/java/ball/http/client/JSONResponseHandler.java,
-	src/main/java/ball/http/client/entity/JSONEntity.java,
-	src/main/java/ball/http/client/method/AnnotatedHttpPost.java:
+	src/main/java/ball/http/client/entity/JSONEntity.java:
 	Allow ObjectMapper instance to be specified.
 
 2016-09-17  Allen D. Ball  <ball@sol.local>
@@ -56,20 +50,10 @@
 	* src/main/java/ball/http/ant/taskdefs/HTTPTask.java:
 	Removed context() method.
 
-2016-09-16  Allen D. Ball  <ball@sol.local>
-
-	* src/main/java/ball/http/client/method/AnnotatedHttpPost.java:
-	Added getEntityObject() and setEntityObject(Object) to allow
-	implementations to specify the underlying Object for getEntity().
-
 2016-09-11  Allen D. Ball  <ball@sol.local>
 
 	* src/main/java/ball/http/client/JSONResponseHandler.java:
 	Initial writing.
-
-	* src/main/java/ball/http/client/method/AnnotatedHttpUriRequest.java:
-	Avoid infinite recursion in
-	AnnotatedHttpUriRequest.getAllHeaders() implementations.
 
 	* src/main/java/ball/http/ant/taskdefs/HTTPTask.java:
 	In log(HttpEntity), do not call HttpEntity.writeTo(OutputStream)
@@ -79,9 +63,6 @@
 	Use URIBuilder to test URISpecification.value().
 
 2016-09-10  Allen D. Ball  <ball@sol.local>
-
-	* Created AnnotatedHttpUriRequest, annotaions, anotation
-	processors, and subclass implementations.
 
 	* src/main/java/ball/http/ant/taskdefs/HTTPTask.java:
 	Refactored to provide an abstract base class for any HTTP API
