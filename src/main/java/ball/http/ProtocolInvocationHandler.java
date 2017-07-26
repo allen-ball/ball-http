@@ -11,6 +11,7 @@ import ball.http.annotation.Entity;
 import ball.http.annotation.GET;
 import ball.http.annotation.HEAD;
 import ball.http.annotation.Header;
+import ball.http.annotation.HostParameter;
 import ball.http.annotation.JSON;
 import ball.http.annotation.JSONProperty;
 import ball.http.annotation.OPTIONS;
@@ -41,16 +42,10 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
-import org.apache.http.client.methods.HttpOptions;
-import org.apache.http.client.methods.HttpPatch;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
@@ -93,6 +88,9 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         TreeSet<Class<? extends Annotation>> parameterAnnotationTypes =
             new TreeSet<>(ClassOrder.NAME);
         TreeSet<Class<?>> returnTypes = new TreeSet<>(ClassOrder.NAME);
+
+        returnTypes.add(HttpRequest.class);
+
         Class<?>[] AS_PARAMETERS = new Class<?>[] { HttpResponse.class };
 
         for (Method method : ProtocolInvocationHandler.class.getMethods()) {
@@ -144,7 +142,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     private final HttpClient client;
     private final LinkedHashSet<Class<?>> protocols = new LinkedHashSet<>();
     private transient ObjectMapper mapper = null;
-    private transient URIBuilder builder = null;
+    private transient URIBuilder uri = null;
     private transient HttpUriRequest request = null;
 
     /**
@@ -219,21 +217,27 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      *
      * @param   annotation      The {@link URISpecification}
      *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(URISpecification annotation) {
-        builder = URIBuilderFactory.getDefault().getInstance(annotation);
+    public void apply(URISpecification annotation) throws Throwable {
+        uri = URIBuilderFactory.getDefault().getInstance(annotation);
     }
 
     /**
      * Method to process a {@link DELETE} {@link Annotation}.
      *
      * @param   annotation      The {@link DELETE} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(DELETE annotation) {
-        request = new HttpDelete();
+    public void apply(DELETE annotation) throws Throwable {
+        request = annotation.type().getConstructor().newInstance();
 
         if (! isNil(annotation.value())) {
-            builder.setPath(annotation.value());
+            uri.setPath(annotation.value());
         }
     }
 
@@ -241,12 +245,15 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * Method to process a {@link GET} {@link Annotation}.
      *
      * @param   annotation      The {@link GET} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(GET annotation) {
-        request = new HttpGet();
+    public void apply(GET annotation) throws Throwable {
+        request = annotation.type().getConstructor().newInstance();
 
         if (! isNil(annotation.value())) {
-            builder.setPath(annotation.value());
+            uri.setPath(annotation.value());
         }
     }
 
@@ -254,12 +261,15 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * Method to process a {@link HEAD} {@link Annotation}.
      *
      * @param   annotation      The {@link HEAD} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(HEAD annotation) {
-        request = new HttpHead();
+    public void apply(HEAD annotation) throws Throwable {
+        request = annotation.type().getConstructor().newInstance();
 
         if (! isNil(annotation.value())) {
-            builder.setPath(annotation.value());
+            uri.setPath(annotation.value());
         }
     }
 
@@ -267,12 +277,15 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * Method to process a {@link OPTIONS} {@link Annotation}.
      *
      * @param   annotation      The {@link OPTIONS} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(OPTIONS annotation) {
-        request = new HttpOptions();
+    public void apply(OPTIONS annotation) throws Throwable {
+        request = annotation.type().getConstructor().newInstance();
 
         if (! isNil(annotation.value())) {
-            builder.setPath(annotation.value());
+            uri.setPath(annotation.value());
         }
     }
 
@@ -280,12 +293,15 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * Method to process a {@link PATCH} {@link Annotation}.
      *
      * @param   annotation      The {@link PATCH} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(PATCH annotation) {
-        request = new HttpPatch();
+    public void apply(PATCH annotation) throws Throwable {
+        request = annotation.type().getConstructor().newInstance();
 
         if (! isNil(annotation.value())) {
-            builder.setPath(annotation.value());
+            uri.setPath(annotation.value());
         }
     }
 
@@ -293,12 +309,15 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * Method to process a {@link POST} {@link Annotation}.
      *
      * @param   annotation      The {@link POST} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(POST annotation) {
-        request = new HttpPost();
+    public void apply(POST annotation) throws Throwable {
+        request = annotation.type().getConstructor().newInstance();
 
         if (! isNil(annotation.value())) {
-            builder.setPath(annotation.value());
+            uri.setPath(annotation.value());
         }
     }
 
@@ -306,12 +325,15 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * Method to process a {@link PUT} {@link Annotation}.
      *
      * @param   annotation      The {@link PUT} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(PUT annotation) {
-        request = new HttpPut();
+    public void apply(PUT annotation) throws Throwable {
+        request = annotation.type().getConstructor().newInstance();
 
         if (! isNil(annotation.value())) {
-            builder.setPath(annotation.value());
+            uri.setPath(annotation.value());
         }
     }
 
@@ -320,8 +342,12 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      *
      * @param   annotation      The {@link Entity} {@link Annotation}.
      * @param   argument        The {@link HttpEntity}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(Entity annotation, HttpEntity argument) {
+    public void apply(Entity annotation,
+                      HttpEntity argument) throws Throwable {
         if (! isNil(annotation.value())) {
             ((AbstractHttpEntity) argument)
                 .setContentType(ContentType.parse(annotation.value())
@@ -337,8 +363,11 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @param   annotation      The {@link Entity} {@link Annotation}.
      * @param   argument        The {@link File} representing the
      *                          {@link HttpEntity}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(Entity annotation, File argument) {
+    public void apply(Entity annotation, File argument) throws Throwable {
         apply(annotation, new FileEntity(argument));
     }
 
@@ -348,8 +377,11 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @param   annotation      The {@link Header} {@link Annotation}.
      * @param   argument        The {@link String} representing the header
      *                          value.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(Header annotation, String argument) {
+    public void apply(Header annotation, String argument) throws Throwable {
         request.setHeader(annotation.value(), argument);
     }
 
@@ -359,9 +391,28 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @param   annotation      The {@link Header} {@link Annotation}.
      * @param   argument        The {@link Object} representing the header
      *                          value.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(Header annotation, Object argument) {
+    public void apply(Header annotation, Object argument) throws Throwable {
         apply(annotation, String.valueOf(argument));
+    }
+
+    /**
+     * Method to process a {@link HostParameter} parameter {@link Annotation}.
+     *
+     * @param   annotation      The {@link HostParameter}
+     *                          {@link Annotation}.
+     * @param   argument        The {@link String} representing the host
+     *                          parameter value.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    public void apply(HostParameter annotation,
+                      String argument) throws Throwable {
+        uri.setHost(argument);
     }
 
     /**
@@ -369,8 +420,11 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      *
      * @param   annotation      The {@link JSON} {@link Annotation}.
      * @param   argument        The {@link JSON} value.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(JSON annotation, Object argument) {
+    public void apply(JSON annotation, Object argument) throws Throwable {
         ((HttpEntityEnclosingRequestBase) request)
             .setEntity(new JSONEntity(getObjectMapper(), argument));
     }
@@ -380,8 +434,12 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      *
      * @param   annotation      The {@link JSONProperty} {@link Annotation}.
      * @param   argument        The {@link JSONProperty} value.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(JSONProperty annotation, Object argument) {
+    public void apply(JSONProperty annotation,
+                      Object argument) throws Throwable {
         JSONEntity entity =
             (JSONEntity)
             ((HttpEntityEnclosingRequestBase) request)
@@ -428,13 +486,17 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      *                          {@link Annotation}.
      * @param   argument        The {@link String} representing the path
      *                          parameter value.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(PathParameter annotation, String argument) {
-        String path = builder.getPath();
+    public void apply(PathParameter annotation,
+                      String argument) throws Throwable {
+        String path = uri.getPath();
 
         if (! isNil(path)) {
-            builder.setPath(path.replaceAll("[{]" + annotation.value() + "[}]",
-                                            argument));
+            uri.setPath(path.replaceAll("[{]" + annotation.value() + "[}]",
+                                        argument));
         }
     }
 
@@ -445,8 +507,12 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      *                          {@link Annotation}.
      * @param   argument        The {@link Object} representing the path
      *                          parameter value.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(PathParameter annotation, Object argument) {
+    public void apply(PathParameter annotation,
+                      Object argument) throws Throwable {
         apply(annotation, String.valueOf(argument));
     }
 
@@ -458,9 +524,15 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      *                          {@link Annotation}.
      * @param   argument        The {@link String} representing the query
      *                          parameter value.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(QueryParameter annotation, String argument) {
-        builder.addParameter(annotation.value(), argument);
+    public void apply(QueryParameter annotation,
+                      String argument) throws Throwable {
+        if (argument != null) {
+            uri.addParameter(annotation.value(), argument);
+        }
     }
 
     /**
@@ -471,9 +543,15 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      *                          {@link Annotation}.
      * @param   argument        The {@link Object} representing the query
      *                          parameter value.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(QueryParameter annotation, Object argument) {
-        apply(annotation, String.valueOf(argument));
+    public void apply(QueryParameter annotation,
+                      Object argument) throws Throwable {
+        if (argument != null) {
+            apply(annotation, String.valueOf(argument));
+        }
     }
 
     /**
@@ -483,9 +561,12 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @param   annotation      The {@link URIParameter}
      *                          {@link Annotation}.
      * @param   argument        The request {@link URI}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(URIParameter annotation, URI argument) {
-        builder = URIBuilderFactory.getDefault().getInstance(argument);
+    public void apply(URIParameter annotation, URI argument) throws Throwable {
+        uri = URIBuilderFactory.getDefault().getInstance(argument);
     }
 
     /**
@@ -495,9 +576,13 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @param   annotation      The {@link URIParameter}
      *                          {@link Annotation}.
      * @param   argument        The request URI as a {@link String}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
      */
-    public void apply(URIParameter annotation, String argument) {
-        builder = URIBuilderFactory.getDefault().getInstance(argument);
+    public void apply(URIParameter annotation,
+                      String argument) throws Throwable {
+        uri = URIBuilderFactory.getDefault().getInstance(argument);
     }
 
     /**
@@ -548,9 +633,16 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         Object result = null;
 
         if (protocols.contains(method.getDeclaringClass())) {
-            result =
-                as(method.getReturnType(),
-                   ((HttpClient) proxy).execute(build(method, argv)));
+            Class<?> type = method.getReturnType();
+            HttpUriRequest request = build(method, argv);
+
+            if (type.isAssignableFrom(request.getClass())) {
+                result = type.cast(request);
+            } else {
+                HttpResponse response = ((HttpClient) proxy).execute(request);
+
+                result = as(type, response);
+            }
         } else {
             result = method.invoke(client, argv);
         }
@@ -560,7 +652,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
 
     private HttpUriRequest build(Method method,
                                  Object... argv) throws Throwable {
-        builder = URIBuilderFactory.getDefault().getInstance();
+        uri = URIBuilderFactory.getDefault().getInstance();
         request = null;
 
         apply(method.getDeclaringClass().getAnnotations());
@@ -568,7 +660,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         apply(method.getParameterAnnotations(),
               method.getParameterTypes(), argv);
 
-        ((HttpRequestBase) request).setURI(builder.build());
+        ((HttpRequestBase) request).setURI(uri.build());
 
         return request;
     }

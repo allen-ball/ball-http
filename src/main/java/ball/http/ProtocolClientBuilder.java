@@ -18,9 +18,13 @@ import org.apache.http.impl.client.CloseableHttpClient;
  * {@link java.lang.reflect.InvocationHandler} implementation is
  * {@link ProtocolInvocationHandler} and supported
  * {@link java.lang.annotation.Annotation}s are documented in the
- * {@code apply(Annotation,...)} methods.  Supported protcol return types
- * are documented in the {@code asSimpleClassName(HttpResponse)} methods
- * (e.g., {@link ProtocolInvocationHandler#asHttpEntity(HttpResponse)}).
+ * {@code apply(Annotation,...)} methods.  If the interface method return
+ * type {@link Class#isAssignableFrom(Class)} (subclass of
+ * {@link org.apache.http.HttpRequest}) then the constructed request is
+ * simply returned.  Otherwise, the request is executed.  Supported protocol
+ * return types are documented in the
+ * {@code asSimpleClassName(HttpResponse)} methods (e.g.,
+ * {@link ProtocolInvocationHandler#asHttpEntity(HttpResponse)}).
  *
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$

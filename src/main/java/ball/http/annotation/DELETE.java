@@ -8,6 +8,7 @@ package ball.http.annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import org.apache.http.client.methods.HttpDelete;
 
 import static ball.util.StringUtil.NIL;
 import static java.lang.annotation.ElementType.METHOD;
@@ -25,4 +26,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({ METHOD })
 public @interface DELETE {
     String value() default NIL;
+    Class<? extends HttpDelete> type() default HttpDelete.class;
 }

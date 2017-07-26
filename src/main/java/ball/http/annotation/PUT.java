@@ -8,6 +8,7 @@ package ball.http.annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import org.apache.http.client.methods.HttpPut;
 
 import static ball.util.StringUtil.NIL;
 import static java.lang.annotation.ElementType.METHOD;
@@ -25,4 +26,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({ METHOD })
 public @interface PUT {
     String value() default NIL;
+    Class<? extends HttpPut> type() default HttpPut.class;
 }

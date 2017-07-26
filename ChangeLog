@@ -1,3 +1,9 @@
+2017-07-25  Allen D. Ball  <ball@sol>
+
+	* Added support for @HostParameter.  Added type() member to
+	protocol method annotations to specify the respective
+	implementations.
+
 2017-07-24  Allen D. Ball  <ball@sol>
 
 	* src/main/java/ball/http/ProtocolClientBuilder.java,
