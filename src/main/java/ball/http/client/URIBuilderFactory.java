@@ -10,15 +10,11 @@ import ball.util.Factory;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Map;
 import org.apache.http.client.utils.URIBuilder;
 
-import static ball.annotation.AnnotationUtil.getFieldsAnnotatedWith;
-import static ball.annotation.AnnotationUtil.getMethodsAnnotatedWith;
 import static ball.util.StringUtil.isNil;
 
 /**
