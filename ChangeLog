@@ -1,3 +1,9 @@
+2017-07-27  Allen D. Ball  <ball@sol>
+
+	* src/main/java/ball/http/ProtocolInvocationHandler.java:
+	Use a ResponseHandler to convert HttpResponse to protocol method
+	return type.
+
 2017-07-25  Allen D. Ball  <ball@sol>
 
 	* Added support for @HostParameter.  Added type() member to
@@ -20,9 +26,6 @@
 	processing/URISpecificationProcessor.java:
 	Support annotating interfaces and interface methods.
 
-	* src/main/java/ball/http/client/entity/JSONEntity.java:
-	Added Object getter.
-
 	* src/main/java/ball/http/client/method/URIBuilderFactory.java:
 	Added getInstance(URISpecification) method.
 
@@ -39,21 +42,12 @@
 
 	* build.xml: Added "http-delete" and "http-put" targets.
 
-2016-09-21  Allen D. Ball  <ball@sol.local>
-
-	* src/main/java/ball/http/client/JSONResponseHandler.java,
-	src/main/java/ball/http/client/entity/JSONEntity.java:
-	Allow ObjectMapper instance to be specified.
-
 2016-09-17  Allen D. Ball  <ball@sol.local>
 
 	* src/main/java/ball/http/ant/taskdefs/HTTPTask.java:
 	Removed context() method.
 
 2016-09-11  Allen D. Ball  <ball@sol.local>
-
-	* src/main/java/ball/http/client/JSONResponseHandler.java:
-	Initial writing.
 
 	* src/main/java/ball/http/ant/taskdefs/HTTPTask.java:
 	In log(HttpEntity), do not call HttpEntity.writeTo(OutputStream)

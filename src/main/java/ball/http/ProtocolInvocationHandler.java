@@ -24,11 +24,14 @@ import ball.http.annotation.URIParameter;
 import ball.http.annotation.URISpecification;
 import ball.http.client.URIBuilderFactory;
 import ball.http.client.entity.JSONEntity;
+import ball.io.IOUtil;
 import ball.util.ClassOrder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
@@ -45,7 +48,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -53,6 +56,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.AbstractHttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
+import org.apache.http.impl.client.AbstractResponseHandler;
 
 import static ball.util.StringUtil.isNil;
 
@@ -123,8 +127,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     private final LinkedHashSet<Class<?>> protocols = new LinkedHashSet<>();
     private transient ObjectMapper mapper = null;
     private transient URIBuilder uri = null;
-    private transient HttpUriRequest request = null;
-    private transient ResponseHandler<?> handler = null;
+    private transient HttpRequest request = null;
 
     /**
      * Sole constructor.
@@ -191,6 +194,102 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         }
 
         return value;
+    }
+
+    @Override
+    public Object invoke(Object proxy,
+                         Method method, Object[] argv) throws Throwable {
+        Object result = null;
+
+        if (protocols.contains(method.getDeclaringClass())) {
+            uri = URIBuilderFactory.getDefault().getInstance();
+            request = null;
+
+            apply(method.getDeclaringClass().getAnnotations());
+            apply(method.getAnnotations());
+
+            Annotation[][] annotations = method.getParameterAnnotations();
+            Class<?>[] types = method.getParameterTypes();
+
+            for (int i = 0; i < annotations.length; i += 1) {
+                if (HttpRequest.class.isAssignableFrom(types[i])) {
+                    request = (HttpRequest) argv[i];
+                }
+
+                apply(annotations[i], types[i], argv[i]);
+            }
+
+            if (request instanceof HttpRequestBase) {
+                ((HttpRequestBase) request).setURI(uri.build());
+            }
+
+            if (request != null) {
+                Class<?> returnType = method.getReturnType();
+
+                if (! returnType.isAssignableFrom(request.getClass())) {
+                    result =
+                        ((HttpClient) proxy)
+                        .execute((HttpUriRequest) request,
+                                 new ResponseHandlerImpl(returnType));
+                } else {
+                    result = returnType.cast(request);
+                }
+            } else {
+                result = null;
+            }
+        } else {
+            result = method.invoke(client, argv);
+        }
+
+        return result;
+    }
+
+    private void apply(Annotation[] annotations) throws Throwable {
+        for (int i = 0; i < annotations.length; i += 1) {
+            apply(annotations[i]);
+        }
+    }
+
+    private void apply(Annotation annotation) throws Throwable {
+        try {
+            if (SUPPORTED_INTERFACE_ANNOTATION_TYPES.contains(annotation.annotationType())) {
+                getClass()
+                    .getMethod(APPLY, annotation.annotationType())
+                    .invoke(this, annotation);
+            }
+        } catch (NoSuchMethodException exception) {
+            throw new IllegalStateException(exception);
+        } catch (IllegalAccessException exception) {
+        } catch (InvocationTargetException exception) {
+            throw exception.getTargetException();
+        }
+    }
+
+    private void apply(Annotation[] annotations,
+                       Class<?> type, Object argument) throws Throwable {
+        for (int i = 0; i < annotations.length; i += 1) {
+            apply(annotations[i], type, argument);
+        }
+    }
+
+    private void apply(Annotation annotation,
+                       Class<?> type, Object argument) throws Throwable {
+        try {
+            if (SUPPORTED_PARAMETER_ANNOTATION_TYPES.contains(annotation.annotationType())) {
+                getClass()
+                    .getMethod(APPLY, annotation.annotationType(), type)
+                    .invoke(this, annotation, argument);
+            }
+        } catch (NoSuchMethodException exception) {
+            if (! Object.class.equals(type)) {
+                apply(annotation, Object.class, argument);
+            } else {
+                throw new IllegalStateException(exception);
+            }
+        } catch (IllegalAccessException exception) {
+        } catch (InvocationTargetException exception) {
+            throw exception.getTargetException();
+        }
     }
 
     /**
@@ -423,8 +522,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
                       Object argument) throws Throwable {
         JSONEntity entity =
             (JSONEntity)
-            ((HttpEntityEnclosingRequestBase) request)
-            .getEntity();
+            ((HttpEntityEnclosingRequestBase) request).getEntity();
 
         if (entity == null) {
             entity =
@@ -566,154 +664,59 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         uri = URIBuilderFactory.getDefault().getInstance(argument);
     }
 
-    /**
-     * (Trivial) method to convert a {@link HttpResponse} to a
-     * {@link HttpResponse}.
-     *
-     * @param   response        The {@link HttpResponse}.
-     *
-     * @return  The {@link HttpResponse}.
-     */
-    public HttpResponse asHttpResponse(HttpResponse response) {
-        return response;
-    }
-
-    /**
-     * Method to convert a {@link HttpResponse} to a {@link HttpEntity}.
-     *
-     * @param   response        The {@link HttpResponse}.
-     *
-     * @return  The {@link HttpEntity} (may be {@code null}).
-     *
-     * @throws  Exception       If the underlying conversion fails for any
-     *                          reason.
-     */
-    public HttpEntity asHttpEntity(HttpResponse response) throws Exception {
-        return (response != null) ? response.getEntity() : null;
-    }
-
-    /**
-     * Method to convert a {@link HttpResponse} to a {@link JsonNode}.
-     *
-     * @param   response        The {@link HttpResponse}.
-     *
-     * @return  The {@link JsonNode} (may be {@code null}).
-     *
-     * @throws  Exception       If the underlying conversion fails for any
-     *                          reason.
-     */
-    public JsonNode asJsonNode(HttpResponse response) throws Exception {
-        HttpEntity entity = asHttpEntity(response);
-
-        return (entity != null) ? getObjectMapper().readTree(entity.getContent()) : null;
-    }
-
-    @Override
-    public Object invoke(Object proxy,
-                         Method method, Object[] argv) throws Throwable {
-        Object result = null;
-
-        if (protocols.contains(method.getDeclaringClass())) {
-            uri = URIBuilderFactory.getDefault().getInstance();
-            request = null;
-            handler = null;
-
-            apply(method.getDeclaringClass().getAnnotations());
-            apply(method.getAnnotations());
-            apply(method.getParameterAnnotations(),
-                  method.getParameterTypes(), argv);
-
-            ((HttpRequestBase) request).setURI(uri.build());
-
-            Class<?> type = method.getReturnType();
-
-            if (! type.isAssignableFrom(request.getClass())) {
-                if (handler != null) {
-                    result = ((HttpClient) proxy).execute(request, handler);
-                } else {
-                    result = as(type, ((HttpClient) proxy).execute(request));
-                }
-            } else {
-                result = type.cast(request);
-            }
-        } else {
-            result = method.invoke(client, argv);
-        }
-
-        return result;
-    }
-
-    private void apply(Annotation[] annotations) throws Throwable {
-        for (int i = 0; i < annotations.length; i += 1) {
-            apply(annotations[i]);
-        }
-    }
-
-    private void apply(Annotation annotation) throws Throwable {
-        try {
-            if (SUPPORTED_INTERFACE_ANNOTATION_TYPES.contains(annotation.annotationType())) {
-                getClass()
-                    .getMethod(APPLY, annotation.annotationType())
-                    .invoke(this, annotation);
-            }
-        } catch (NoSuchMethodException exception) {
-            throw new IllegalStateException(exception);
-        } catch (IllegalAccessException exception) {
-        } catch (InvocationTargetException exception) {
-            throw exception.getTargetException();
-        }
-    }
-
-    private void apply(Annotation[][] annotations,
-                       Class<?>[] types, Object[] argv) throws Throwable {
-        for (int i = 0; i < annotations.length; i += 1) {
-            apply(annotations[i], types[i], argv[i]);
-        }
-    }
-
-    private void apply(Annotation[] annotations,
-                       Class<?> type, Object argument) throws Throwable {
-        for (int i = 0; i < annotations.length; i += 1) {
-            apply(annotations[i], type, argument);
-        }
-    }
-
-    private void apply(Annotation annotation,
-                       Class<?> type, Object argument) throws Throwable {
-        try {
-            if (SUPPORTED_PARAMETER_ANNOTATION_TYPES.contains(annotation.annotationType())) {
-                getClass()
-                    .getMethod(APPLY, annotation.annotationType(), type)
-                    .invoke(this, annotation, argument);
-            }
-        } catch (NoSuchMethodException exception) {
-            if (! Object.class.equals(type)) {
-                apply(annotation, Object.class, argument);
-            } else {
-                throw new IllegalStateException(exception);
-            }
-        } catch (IllegalAccessException exception) {
-        } catch (InvocationTargetException exception) {
-            throw exception.getTargetException();
-        }
-    }
-
-    private Object as(Class<?> type, HttpResponse response) throws Throwable {
-        Object object = null;
-
-        try {
-            object =
-                getClass()
-                .getMethod(AS + type.getSimpleName(), HttpResponse.class)
-                .invoke(this, response);
-        } catch (IllegalAccessException exception) {
-        } catch (InvocationTargetException exception) {
-            throw exception.getTargetException();
-        }
-
-        return type.cast(object);
-    }
-
     @Override
     public String toString() { return String.valueOf(client); }
+
+    private class ResponseHandlerImpl extends AbstractResponseHandler<Object> {
+        private final Class<?> type;
+
+        public ResponseHandlerImpl(Class<?> type) {
+            super();
+
+            if (type != null) {
+                this.type = type;
+            } else {
+                throw new NullPointerException("type");
+            }
+        }
+
+        @Override
+        public Object handleResponse(HttpResponse response) throws HttpResponseException,
+                                                                   IOException {
+            Object object = null;
+
+            if (HttpResponse.class.isAssignableFrom(type)) {
+                object = response;
+            } else if (HttpEntity.class.isAssignableFrom(type)) {
+                object = response.getEntity();
+            } else {
+                object = super.handleResponse(response);
+            }
+
+            return object;
+        }
+
+        @Override
+        public Object handleEntity(HttpEntity entity) throws IOException {
+            Object object = null;
+
+            if (entity != null) {
+                InputStream in = null;
+
+                try {
+                    in = entity.getContent();
+                    object =
+                        ProtocolInvocationHandler.this.getObjectMapper()
+                        .readValue(in, type);
+                } finally {
+                    IOUtil.close(in);
+                }
+            }
+
+            return object;
+        }
+
+        @Override
+        public String toString() { return String.valueOf(client); }
+    }
 }

@@ -12,24 +12,32 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.CloseableHttpClient;
 
 /**
+ * <p>
  * Annotated service protocol builder.  The {@link #build(Class)} method
  * creates a {@link Proxy} that implements both the argument protocol
- * interface and the super-interfaces of {@link CloseableHttpClient}.  The
- * {@link java.lang.reflect.InvocationHandler} implementation is
+ * interface and the super-interfaces of {@link CloseableHttpClient}.
+ * </p><p>
+ * The {@link java.lang.reflect.InvocationHandler} implementation is
  * {@link ProtocolInvocationHandler} and supported
  * {@link java.lang.annotation.Annotation}s are documented in the
- * {@code apply(Annotation,...)} methods.  If the interface method return
- * type {@link Class#isAssignableFrom(Class)} (subclass of
- * {@link org.apache.http.HttpRequest}) then the constructed request is
- * simply returned.  Otherwise, the request is executed.  Supported protocol
- * return types are documented in the
- * {@code asSimpleClassName(HttpResponse)} methods (e.g.,
- * {@link ProtocolInvocationHandler#asHttpEntity(HttpResponse)}).  Authors
- * should consider designing protocol methods to throw
+ * {@code apply(Annotation,...)} methods.
+ * </p><p>
+ * If the interface method return type is a subclass of
+ * {@link org.apache.http.HttpRequest} then the constructed request is
+ * simply returned.  Otherwise, the request is executed.
+ * </p><p>
+ * The {@link ProtocolInvocationHandler} installs a
+ * {@link org.apache.http.client.ResponseHandler} that will support
+ * {@link org.apache.http.HttpResponse} and
+ * {@link org.apache.http.HttpEntity} in addition to parsing entities with
+ * an {@link com.fasterxml.jackson.databind.ObjectMapper} (see
+ * {@link ProtocolInvocationHandler#getObjectMapper()}).
+ * </p><p>
+ * Protocol API authors should consider designing protocol methods to throw
  * {@link org.apache.http.client.HttpResponseException},
  * {@link org.apache.http.client.ClientProtocolException}, and
  * {@link java.io.IOException}.
- *
+ * </p>
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$
  */
