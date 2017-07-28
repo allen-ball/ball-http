@@ -24,7 +24,11 @@ import org.apache.http.impl.client.CloseableHttpClient;
  * simply returned.  Otherwise, the request is executed.  Supported protocol
  * return types are documented in the
  * {@code asSimpleClassName(HttpResponse)} methods (e.g.,
- * {@link ProtocolInvocationHandler#asHttpEntity(HttpResponse)}).
+ * {@link ProtocolInvocationHandler#asHttpEntity(HttpResponse)}).  Authors
+ * should consider designing protocol methods to throw
+ * {@link org.apache.http.client.HttpResponseException},
+ * {@link org.apache.http.client.ClientProtocolException}, and
+ * {@link java.io.IOException}.
  *
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$

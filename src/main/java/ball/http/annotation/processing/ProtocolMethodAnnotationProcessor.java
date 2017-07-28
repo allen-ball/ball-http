@@ -25,9 +25,7 @@ import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeMirror;
 
-import static ball.http.ProtocolInvocationHandler.SUPPORTED_RETURN_TYPES;
 import static ball.util.MapUtil.getByKeyToString;
 import static ball.util.StringUtil.isNil;
 import static javax.tools.Diagnostic.Kind.ERROR;
@@ -100,17 +98,6 @@ public class ProtocolMethodAnnotationProcessor
                       + " but is not a METHOD of an INTERFACE");
                 break;
             }
-
-            TypeMirror mirror = ((ExecutableElement) element).getReturnType();
-
-            if (! isSupported(mirror)) {
-                print(ERROR,
-                      element,
-                      element.getKind() + " annotated with "
-                      + AT + annotation.getSimpleName()
-                      + " returns unsupported type: "
-                      + mirror);
-            }
             break;
         }
     }
@@ -123,19 +110,5 @@ public class ProtocolMethodAnnotationProcessor
         }
 
         return set.toString();
-    }
-
-    private boolean isSupported(TypeMirror mirror) {
-        boolean isSupported = false;
-
-        for (Class<?> type : SUPPORTED_RETURN_TYPES) {
-            isSupported |= isSameType(mirror, type);
-
-            if (isSupported) {
-                break;
-            }
-        }
-
-        return isSupported;
     }
 }

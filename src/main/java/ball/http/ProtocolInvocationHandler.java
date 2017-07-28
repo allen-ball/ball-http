@@ -45,6 +45,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -77,21 +78,11 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      */
     public static final Set<Class<? extends Annotation>> SUPPORTED_PARAMETER_ANNOTATION_TYPES;
 
-    /**
-     * {@link Set} of supported protocol method return types.
-     */
-    public static final Set<Class<?>> SUPPORTED_RETURN_TYPES;
-
     static {
         TreeSet<Class<? extends Annotation>> interfaceAnnotationTypes =
             new TreeSet<>(ClassOrder.NAME);
         TreeSet<Class<? extends Annotation>> parameterAnnotationTypes =
             new TreeSet<>(ClassOrder.NAME);
-        TreeSet<Class<?>> returnTypes = new TreeSet<>(ClassOrder.NAME);
-
-        returnTypes.add(HttpRequest.class);
-
-        Class<?>[] AS_PARAMETERS = new Class<?>[] { HttpResponse.class };
 
         for (Method method : ProtocolInvocationHandler.class.getMethods()) {
             String name = method.getName();
@@ -120,23 +111,12 @@ public class ProtocolInvocationHandler implements InvocationHandler {
                     }
                 }
             }
-            /*
-             * asClassSimpleName(HttpResponse)
-             */
-            if (Arrays.equals(types, AS_PARAMETERS)) {
-                Class<?> type = method.getReturnType();
-
-                if (name.equals(AS + type.getSimpleName())) {
-                    returnTypes.add(type);
-                }
-            }
         }
 
         SUPPORTED_INTERFACE_ANNOTATION_TYPES =
             Collections.unmodifiableSet(interfaceAnnotationTypes);
         SUPPORTED_PARAMETER_ANNOTATION_TYPES =
             Collections.unmodifiableSet(parameterAnnotationTypes);
-        SUPPORTED_RETURN_TYPES = Collections.unmodifiableSet(returnTypes);
     }
 
     private final HttpClient client;
@@ -144,6 +124,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     private transient ObjectMapper mapper = null;
     private transient URIBuilder uri = null;
     private transient HttpUriRequest request = null;
+    private transient ResponseHandler<?> handler = null;
 
     /**
      * Sole constructor.
@@ -633,36 +614,33 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         Object result = null;
 
         if (protocols.contains(method.getDeclaringClass())) {
+            uri = URIBuilderFactory.getDefault().getInstance();
+            request = null;
+            handler = null;
+
+            apply(method.getDeclaringClass().getAnnotations());
+            apply(method.getAnnotations());
+            apply(method.getParameterAnnotations(),
+                  method.getParameterTypes(), argv);
+
+            ((HttpRequestBase) request).setURI(uri.build());
+
             Class<?> type = method.getReturnType();
-            HttpUriRequest request = build(method, argv);
 
-            if (type.isAssignableFrom(request.getClass())) {
-                result = type.cast(request);
+            if (! type.isAssignableFrom(request.getClass())) {
+                if (handler != null) {
+                    result = ((HttpClient) proxy).execute(request, handler);
+                } else {
+                    result = as(type, ((HttpClient) proxy).execute(request));
+                }
             } else {
-                HttpResponse response = ((HttpClient) proxy).execute(request);
-
-                result = as(type, response);
+                result = type.cast(request);
             }
         } else {
             result = method.invoke(client, argv);
         }
 
         return result;
-    }
-
-    private HttpUriRequest build(Method method,
-                                 Object... argv) throws Throwable {
-        uri = URIBuilderFactory.getDefault().getInstance();
-        request = null;
-
-        apply(method.getDeclaringClass().getAnnotations());
-        apply(method.getAnnotations());
-        apply(method.getParameterAnnotations(),
-              method.getParameterTypes(), argv);
-
-        ((HttpRequestBase) request).setURI(uri.build());
-
-        return request;
     }
 
     private void apply(Annotation[] annotations) throws Throwable {
