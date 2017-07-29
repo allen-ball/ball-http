@@ -104,7 +104,7 @@ public class ProtocolNameValueAnnotationProcessor
                       + " but no name() specified");
             }
 
-            if (! isSpecified(value)) {
+            if (value == null) {
                 print(ERROR,
                       element,
                       element.getKind() + " annotated with "
