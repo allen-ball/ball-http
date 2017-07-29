@@ -614,6 +614,19 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
+     * Method to process a {@link QueryParameter} {@link Annotation}.
+     *
+     * @param   annotation      The {@link QueryParameter}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    public void apply(QueryParameter annotation) throws Throwable {
+        uri.addParameter(annotation.name(), annotation.value());
+    }
+
+    /**
      * Method to process a {@link QueryParameter} parameter
      * {@link Annotation}.
      *
@@ -627,8 +640,14 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      */
     public void apply(QueryParameter annotation,
                       String argument) throws Throwable {
+        String name = annotation.name();
+
+        if (isNil(name)) {
+            name = annotation.value();
+        }
+
         if (argument != null) {
-            uri.addParameter(annotation.value(), argument);
+            uri.addParameter(name, argument);
         }
     }
 

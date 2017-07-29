@@ -9,6 +9,7 @@ import ball.annotation.ServiceProviderFor;
 import ball.annotation.processing.AbstractAnnotationProcessor;
 import ball.annotation.processing.For;
 import ball.http.annotation.Header;
+import ball.http.annotation.QueryParameter;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.AnnotationMirror;
@@ -28,13 +29,14 @@ import static javax.tools.Diagnostic.Kind.ERROR;
  * @version $Revision$
  */
 @ServiceProviderFor({ Processor.class })
-@For({ Header.class })
-public class HeaderProcessor extends AbstractAnnotationProcessor {
+@For({ Header.class, QueryParameter.class })
+public class ProtocolNameValueAnnotationProcessor
+             extends AbstractAnnotationProcessor {
 
     /**
      * Sole constructor.
      */
-    public HeaderProcessor() { super(); }
+    public ProtocolNameValueAnnotationProcessor() { super(); }
 
     @Override
     public void process(RoundEnvironment roundEnv,
