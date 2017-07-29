@@ -418,6 +418,18 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
+     * Method to process a {@link Header} {@link Annotation}.
+     *
+     * @param   annotation      The {@link Header} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    public void apply(Header annotation) throws Throwable {
+        request.setHeader(annotation.name(), annotation.value());
+    }
+
+    /**
      * Method to process a {@link Entity} parameter {@link Annotation}.
      *
      * @param   annotation      The {@link Entity} {@link Annotation}.
@@ -462,7 +474,13 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      *                          configured.
      */
     public void apply(Header annotation, String argument) throws Throwable {
-        request.setHeader(annotation.value(), argument);
+        String name = annotation.name();
+
+        if (isNil(name)) {
+            name = annotation.value();
+        }
+
+        request.setHeader(name, argument);
     }
 
     /**
@@ -717,6 +735,6 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         }
 
         @Override
-        public String toString() { return String.valueOf(client); }
+        public String toString() { return super.toString(); }
     }
 }

@@ -6,6 +6,7 @@
 package ball.http.annotation.processing;
 
 import ball.annotation.ServiceProviderFor;
+import ball.annotation.processing.AbstractAnnotationProcessor;
 import ball.annotation.processing.For;
 import ball.http.annotation.Header;
 import javax.annotation.processing.Processor;
@@ -28,8 +29,7 @@ import static javax.tools.Diagnostic.Kind.ERROR;
  */
 @ServiceProviderFor({ Processor.class })
 @For({ Header.class })
-public class HeaderProcessor
-             extends ProtocolMethodParameterAnnotationProcessor {
+public class HeaderProcessor extends AbstractAnnotationProcessor {
 
     /**
      * Sole constructor.
@@ -40,18 +40,102 @@ public class HeaderProcessor
     public void process(RoundEnvironment roundEnv,
                         TypeElement annotation,
                         Element element) throws Exception {
-        super.process(roundEnv, annotation, element);
+        switch (element.getKind()) {
+        case INTERFACE:
+            break;
 
-        AnnotationMirror mirror = getAnnotationMirror(element, annotation);
-        AnnotationValue value =
-            getByKeyToString(mirror.getElementValues(), "value()");
+        case METHOD:
+            switch (element.getEnclosingElement().getKind()) {
+            case INTERFACE:
+                break;
 
-        if (value == null || isNil(value.toString())) {
+            default:
+                print(ERROR,
+                      element,
+                      element.getKind() + " annotated with "
+                      + AT + annotation.getSimpleName()
+                      + " but is not a " + element.getKind()
+                      + " of an INTERFACE");
+                break;
+            }
+            break;
+
+        case PARAMETER:
+            switch (element.getEnclosingElement().getEnclosingElement().getKind()) {
+            case INTERFACE:
+                break;
+
+            default:
+                print(ERROR,
+                      element,
+                      element.getKind() + " annotated with "
+                      + AT + annotation.getSimpleName()
+                      + " but is not a " + element.getKind()
+                      + " of an INTERFACE METHOD");
+                break;
+            }
+            break;
+
+        default:
             print(ERROR,
                   element,
                   element.getKind() + " annotated with "
                   + AT + annotation.getSimpleName()
-                  + " but no value() specified");
+                  + " but is not an INTERFACE, INTERFACE METHOD, or INTERFACE METHOD PARAMETER");
+            break;
         }
+
+        AnnotationMirror mirror = getAnnotationMirror(element, annotation);
+        AnnotationValue name =
+            getByKeyToString(mirror.getElementValues(), "name()");
+        AnnotationValue value =
+            getByKeyToString(mirror.getElementValues(), "value()");
+
+        switch (element.getKind()) {
+        case INTERFACE:
+        case METHOD:
+            if (! isSpecified(name)) {
+                print(ERROR,
+                      element,
+                      element.getKind() + " annotated with "
+                      + AT + annotation.getSimpleName()
+                      + " but no name() specified");
+            }
+
+            if (! isSpecified(value)) {
+                print(ERROR,
+                      element,
+                      element.getKind() + " annotated with "
+                      + AT + annotation.getSimpleName()
+                      + " but no value() specified");
+            }
+            break;
+
+        case PARAMETER:
+            if (isSpecified(name) && isSpecified(value)) {
+                print(ERROR,
+                      element,
+                      element.getKind() + " annotated with "
+                      + AT + annotation.getSimpleName()
+                      + " but both name() and value() specified on "
+                      + element.getKind());
+            }
+
+            if (! (isSpecified(name) || isSpecified(value))) {
+                print(ERROR,
+                      element,
+                      element.getKind() + " annotated with "
+                      + AT + annotation.getSimpleName()
+                      + " but neither name() or value() specified");
+            }
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    private boolean isSpecified(AnnotationValue value) {
+        return (value != null && (! isNil(value.toString())));
     }
 }
