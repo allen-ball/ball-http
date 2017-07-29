@@ -11,6 +11,7 @@ import ball.http.annotation.Entity;
 import ball.http.annotation.GET;
 import ball.http.annotation.HEAD;
 import ball.http.annotation.Header;
+import ball.http.annotation.Headers;
 import ball.http.annotation.HostParameter;
 import ball.http.annotation.JSON;
 import ball.http.annotation.JSONProperty;
@@ -20,6 +21,7 @@ import ball.http.annotation.POST;
 import ball.http.annotation.PUT;
 import ball.http.annotation.PathParameter;
 import ball.http.annotation.QueryParameter;
+import ball.http.annotation.QueryParameters;
 import ball.http.annotation.URIParameter;
 import ball.http.annotation.URISpecification;
 import ball.http.client.URIBuilderFactory;
@@ -430,6 +432,22 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
+     * Method to process a {@link Headers} {@link Annotation}.
+     *
+     * @param   annotation      The {@link Headers} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    public void apply(Headers annotation) throws Throwable {
+        if (annotation.value() != null) {
+            for (Header header : annotation.value()) {
+                apply(header);
+            }
+        }
+    }
+
+    /**
      * Method to process a {@link Entity} parameter {@link Annotation}.
      *
      * @param   annotation      The {@link Entity} {@link Annotation}.
@@ -624,6 +642,23 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      */
     public void apply(QueryParameter annotation) throws Throwable {
         uri.addParameter(annotation.name(), annotation.value());
+    }
+
+    /**
+     * Method to process a {@link QueryParameters} {@link Annotation}.
+     *
+     * @param   annotation      The {@link QueryParameters}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    public void apply(QueryParameters annotation) throws Throwable {
+        if (annotation.value() != null) {
+            for (QueryParameter parameter : annotation.value()) {
+                apply(parameter);
+            }
+        }
     }
 
     /**

@@ -138,6 +138,6 @@ public class ProtocolNameValueAnnotationProcessor
     }
 
     private boolean isSpecified(AnnotationValue value) {
-        return (value != null && (! isNil(value.toString())));
+        return (value != null && (! isNil((String) value.getValue())));
     }
 }

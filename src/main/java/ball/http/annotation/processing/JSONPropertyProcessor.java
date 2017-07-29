@@ -46,7 +46,7 @@ public class JSONPropertyProcessor
         AnnotationValue value =
             getByKeyToString(mirror.getElementValues(), "value()");
 
-        if (value == null || isNil(value.toString())) {
+        if (value == null || isNil((String) value.getValue())) {
             print(ERROR,
                   element,
                   element.getKind() + " annotated with "
