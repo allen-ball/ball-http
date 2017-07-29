@@ -13,6 +13,7 @@ import ball.http.annotation.HEAD;
 import ball.http.annotation.Header;
 import ball.http.annotation.Headers;
 import ball.http.annotation.HostParameter;
+import ball.http.annotation.HttpMessageType;
 import ball.http.annotation.JSON;
 import ball.http.annotation.JSONProperty;
 import ball.http.annotation.OPTIONS;
@@ -47,6 +48,8 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpMessage;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -128,8 +131,9 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     private final HttpClient client;
     private final LinkedHashSet<Class<?>> protocols = new LinkedHashSet<>();
     private transient ObjectMapper mapper = null;
+    private transient HttpHost target = null;
     private transient URIBuilder uri = null;
-    private transient HttpRequest request = null;
+    private transient HttpMessage request = null;
 
     /**
      * Sole constructor.
@@ -229,10 +233,18 @@ public class ProtocolInvocationHandler implements InvocationHandler {
                 Class<?> returnType = method.getReturnType();
 
                 if (! returnType.isAssignableFrom(request.getClass())) {
-                    result =
-                        ((HttpClient) proxy)
-                        .execute((HttpUriRequest) request,
-                                 new ResponseHandlerImpl(returnType));
+                    if (request instanceof HttpUriRequest) {
+                        result =
+                            ((HttpClient) proxy)
+                            .execute((HttpUriRequest) request,
+                                     new ResponseHandlerImpl(returnType));
+                    } else {
+                        result =
+                            ((HttpClient) proxy)
+                            .execute(target,
+                                     (HttpRequest) request,
+                                     new ResponseHandlerImpl(returnType));
+                    }
                 } else {
                     result = returnType.cast(request);
                 }
@@ -321,6 +333,19 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         if (! isNil(annotation.value())) {
             uri.setPath(annotation.value());
         }
+    }
+
+    /**
+     * Method to process a {@link HttpMessageType} {@link Annotation}.
+     *
+     * @param   annotation      The {@link HttpMessageType}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    public void apply(HttpMessageType annotation) throws Throwable {
+        request = annotation.value().getConstructor().newInstance();
     }
 
     /**

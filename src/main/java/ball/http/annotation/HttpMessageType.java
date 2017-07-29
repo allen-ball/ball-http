@@ -8,23 +8,23 @@ package ball.http.annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import org.apache.http.HttpMessage;
 
 import static ball.util.StringUtil.NIL;
-import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * {@link java.lang.annotation.Annotation} to mark an interface method
- * parameter as an
- * {@link org.apache.http.client.methods.HttpEntityEnclosingRequestBase}
- * {@link org.apache.http.HttpEntity}.
+ * {@link java.lang.annotation.Annotation} for portocol interfaces and
+ * methods to specify the {@link HttpMessage} implementation.
  *
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$
  */
 @Documented
 @Retention(RUNTIME)
-@Target({ PARAMETER })
-public @interface Entity {
-    String value() default NIL;
+@Target({ TYPE, METHOD })
+public @interface HttpMessageType {
+    Class<? extends HttpMessage> value();
 }
