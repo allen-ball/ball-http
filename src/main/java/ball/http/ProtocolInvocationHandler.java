@@ -16,7 +16,6 @@ import ball.http.annotation.HostParameter;
 import ball.http.annotation.HttpMessageType;
 import ball.http.annotation.JAXB;
 import ball.http.annotation.JSON;
-import ball.http.annotation.JSONProperty;
 import ball.http.annotation.OPTIONS;
 import ball.http.annotation.PATCH;
 import ball.http.annotation.POST;
@@ -718,54 +717,6 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     public void apply(JSON annotation, Object argument) throws Throwable {
         ((HttpEntityEnclosingRequestBase) request)
             .setEntity(new JSONHttpEntity(argument));
-    }
-
-    /**
-     * Method to process a {@link JSONProperty} parameter {@link Annotation}.
-     *
-     * @param   annotation      The {@link JSONProperty} {@link Annotation}.
-     * @param   argument        The {@link JSONProperty} value.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    public void apply(JSONProperty annotation,
-                      Object argument) throws Throwable {
-        JSONHttpEntity entity =
-            (JSONHttpEntity)
-            ((HttpEntityEnclosingRequestBase) request).getEntity();
-
-        if (entity == null) {
-            entity =
-                new JSONHttpEntity(getObjectMapper().createObjectNode());
-            ((HttpEntityEnclosingRequestBase) request).setEntity(entity);
-        }
-
-        ObjectNode node = (ObjectNode) entity.getObject();
-
-        if (argument == null) {
-            node.putNull(annotation.value());
-        } else if (argument instanceof BigDecimal) {
-            node.put(annotation.value(), (BigDecimal) argument);
-        } else if (argument instanceof Boolean) {
-            node.put(annotation.value(), (Boolean) argument);
-        } else if (argument instanceof byte[]) {
-            node.put(annotation.value(), (byte[]) argument);
-        } else if (argument instanceof Double) {
-            node.put(annotation.value(), (Double) argument);
-        } else if (argument instanceof Float) {
-            node.put(annotation.value(), (Float) argument);
-        } else if (argument instanceof Integer) {
-            node.put(annotation.value(), (Integer) argument);
-        } else if (argument instanceof Long) {
-            node.put(annotation.value(), (Long) argument);
-        } else if (argument instanceof Short) {
-            node.put(annotation.value(), (Short) argument);
-        } else if (argument instanceof String) {
-            node.put(annotation.value(), (String) argument);
-        } else {
-            node.putPOJO(annotation.value(), argument);
-        }
     }
 
     /**
