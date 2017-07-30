@@ -9,6 +9,7 @@ import ball.annotation.ServiceProviderFor;
 import ball.annotation.processing.AbstractAnnotationProcessor;
 import ball.annotation.processing.For;
 import ball.http.annotation.Headers;
+import ball.http.annotation.PathParameters;
 import ball.http.annotation.QueryParameters;
 import java.util.List;
 import javax.annotation.processing.Processor;
@@ -29,7 +30,7 @@ import static javax.tools.Diagnostic.Kind.ERROR;
  * @version $Revision$
  */
 @ServiceProviderFor({ Processor.class })
-@For({ Headers.class, QueryParameters.class })
+@For({ Headers.class, PathParameters.class, QueryParameters.class })
 public class ProtocolNameValueArrayAnnotationProcessor
              extends AbstractAnnotationProcessor {
 

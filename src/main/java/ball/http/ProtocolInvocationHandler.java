@@ -22,6 +22,7 @@ import ball.http.annotation.PATCH;
 import ball.http.annotation.POST;
 import ball.http.annotation.PUT;
 import ball.http.annotation.PathParameter;
+import ball.http.annotation.PathParameters;
 import ball.http.annotation.QueryParameter;
 import ball.http.annotation.QueryParameters;
 import ball.http.annotation.URIParameter;
@@ -45,7 +46,9 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import javax.xml.bind.JAXBContext;
@@ -143,6 +146,8 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     private transient ObjectMapper mapper = null;
     private transient HttpHost target = null;
     private transient URIBuilder uri = null;
+    private transient LinkedHashMap<String,String> pathMap = null;
+    private transient LinkedHashMap<String,String> queryMap = null;
     private transient HttpMessage request = null;
 
     /**
@@ -342,8 +347,12 @@ public class ProtocolInvocationHandler implements InvocationHandler {
 
         if (protocols.contains(method.getDeclaringClass())) {
             uri = URIBuilderFactory.getDefault().getInstance();
+            pathMap = new LinkedHashMap<>();
+            queryMap = new LinkedHashMap<>();
             request = null;
-
+            /*
+             * Process annotations.
+             */
             apply(method.getDeclaringClass().getAnnotations());
             apply(method.getAnnotations());
 
@@ -357,11 +366,26 @@ public class ProtocolInvocationHandler implements InvocationHandler {
 
                 apply(annotations[i], types[i], argv[i]);
             }
+            /*
+             * Apply URI path and query parameters and build the URI.
+             */
+            for (Map.Entry<String,String> entry : pathMap.entrySet()) {
+                uri.setPath(uri.getPath()
+                            .replaceAll("[{]" + entry.getKey() + "[}]",
+                                        entry.getValue()));
+            }
+
+            for (Map.Entry<String,String> entry : queryMap.entrySet()) {
+                uri.addParameter(entry.getKey(), entry.getValue());
+            }
 
             if (request instanceof HttpRequestBase) {
                 ((HttpRequestBase) request).setURI(uri.build());
             }
-
+            /*
+             * Execute the request and return the result (unless the
+             * protocol specifies that the request should be returned).
+             */
             if (request != null) {
                 Class<?> returnType = method.getReturnType();
 
@@ -606,6 +630,36 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
+     * Method to process a {@link PathParameter} {@link Annotation}.
+     *
+     * @param   annotation      The {@link PathParameter}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    public void apply(PathParameter annotation) throws Throwable {
+        pathMap.put(annotation.name(), annotation.value());
+    }
+
+    /**
+     * Method to process a {@link PathParameters} {@link Annotation}.
+     *
+     * @param   annotation      The {@link PathParameters}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    public void apply(PathParameters annotation) throws Throwable {
+        if (annotation.value() != null) {
+            for (PathParameter header : annotation.value()) {
+                apply(header);
+            }
+        }
+    }
+
+    /**
      * Method to process a {@link Entity} parameter {@link Annotation}.
      *
      * @param   annotation      The {@link Entity} {@link Annotation}.
@@ -732,12 +786,13 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      */
     public void apply(PathParameter annotation,
                       String argument) throws Throwable {
-        String path = uri.getPath();
+        String name = annotation.name();
 
-        if (! isNil(path)) {
-            uri.setPath(path.replaceAll("[{]" + annotation.value() + "[}]",
-                                        argument));
+        if (isNil(name)) {
+            name = annotation.value();
         }
+
+        pathMap.put(name, argument);
     }
 
     /**
@@ -766,7 +821,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      *                          configured.
      */
     public void apply(QueryParameter annotation) throws Throwable {
-        uri.addParameter(annotation.name(), annotation.value());
+        queryMap.put(annotation.name(), annotation.value());
     }
 
     /**
@@ -807,7 +862,9 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         }
 
         if (argument != null) {
-            uri.addParameter(name, argument);
+            queryMap.put(name, argument);
+        } else {
+            queryMap.remove(name);
         }
     }
 
