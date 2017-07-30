@@ -14,7 +14,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * {@link java.lang.annotation.Annotation} to mark an interface method
- * parameter as a JSON entity.
+ * parameter as a JAXB entity.
  *
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$
@@ -22,5 +22,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Documented
 @Retention(RUNTIME)
 @Target({ PARAMETER })
-public @interface JSON {
+public @interface JAXB {
 }

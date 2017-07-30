@@ -7,7 +7,7 @@ package ball.http.annotation.processing;
 
 import ball.annotation.ServiceProviderFor;
 import ball.annotation.processing.For;
-import ball.http.annotation.JSON;
+import ball.http.annotation.JAXB;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.AnnotationMirror;
@@ -20,20 +20,20 @@ import static ball.util.StringUtil.isNil;
 import static javax.tools.Diagnostic.Kind.ERROR;
 
 /**
- * {@link JSON} parameter {@link java.lang.annotation.Annotation}
+ * {@link JAXB} parameter {@link java.lang.annotation.Annotation}
  * {@link Processor}
  *
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$
  */
 @ServiceProviderFor({ Processor.class })
-@For({ JSON.class })
-public class JSONProcessor extends ProtocolMethodParameterAnnotationProcessor {
+@For({ JAXB.class })
+public class JAXBProcessor extends ProtocolMethodParameterAnnotationProcessor {
 
     /**
      * Sole constructor.
      */
-    public JSONProcessor() { super(); }
+    public JAXBProcessor() { super(); }
 
     @Override
     public void process(RoundEnvironment roundEnv,

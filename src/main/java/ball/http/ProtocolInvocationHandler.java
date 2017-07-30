@@ -14,6 +14,7 @@ import ball.http.annotation.Header;
 import ball.http.annotation.Headers;
 import ball.http.annotation.HostParameter;
 import ball.http.annotation.HttpMessageType;
+import ball.http.annotation.JAXB;
 import ball.http.annotation.JSON;
 import ball.http.annotation.JSONProperty;
 import ball.http.annotation.OPTIONS;
@@ -26,7 +27,6 @@ import ball.http.annotation.QueryParameters;
 import ball.http.annotation.URIParameter;
 import ball.http.annotation.URISpecification;
 import ball.http.client.URIBuilderFactory;
-import ball.http.client.entity.JSONEntity;
 import ball.io.IOUtil;
 import ball.util.ClassOrder;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -35,6 +35,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
@@ -42,16 +43,22 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
@@ -130,6 +137,10 @@ public class ProtocolInvocationHandler implements InvocationHandler {
 
     private final HttpClient client;
     private final LinkedHashSet<Class<?>> protocols = new LinkedHashSet<>();
+    private transient Charset charset = null;
+    private transient JAXBContext context = null;
+    private transient Marshaller marshaller = null;
+    private transient Unmarshaller unmarshaller = null;
     private transient ObjectMapper mapper = null;
     private transient HttpHost target = null;
     private transient URIBuilder uri = null;
@@ -151,6 +162,129 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         }
 
         Collections.addAll(this.protocols, protocols);
+    }
+
+    /**
+     * Method to get a {@link Charset} for {@code this}
+     * {@link ProtocolInvocationHandler}.  Will search the protocol
+     * interface fields for a configured {@link Charset} and use if
+     * found.  Otherwise, this method will return a
+     * {@link Charset#forName(String)} for {@code UTF-8}.
+     *
+     * @return  An {@link Charset}.
+     */
+    public Charset getCharset() {
+        synchronized(this) {
+            if (charset == null) {
+                charset = find(Charset.class);
+            }
+
+            if (charset == null) {
+                charset = Charset.forName("UTF-8");
+            }
+        }
+
+        return charset;
+    }
+
+    /**
+     * Method to get an {@link JAXBContext} for {@code this}
+     * {@link ProtocolInvocationHandler}.  Will search the protocol
+     * interface fields for a configured {@link JAXBContext} and use if
+     * found.  Otherwise, this method will return a new
+     * {@link JAXBContext}.
+     *
+     * @return  An {@link JAXBContext}.
+     */
+    public JAXBContext getJAXBContext() {
+        synchronized(this) {
+            if (context == null) {
+                context = find(JAXBContext.class);
+            }
+
+            if (context == null) {
+                TreeSet<Class<?>> classes = new TreeSet<>(ClassOrder.NAME);
+
+                for (Class<?> protocol : protocols) {
+                    for (Method method : protocol.getMethods()) {
+                        Collections.addAll(classes, method.getReturnType());
+
+                        Class<?>[] types = method.getParameterTypes();
+
+                        if (types != null) {
+                            Collections.addAll(classes, types);
+                        }
+                    }
+                }
+
+                try {
+                    Class<?>[] types = classes.toArray(new Class<?>[] { });
+
+                    context = JAXBContext.newInstance(types);
+                } catch (JAXBException exception) {
+                    throw new IllegalStateException(exception);
+                }
+            }
+        }
+
+        return context;
+    }
+
+    /**
+     * Method to get an {@link Marshaller} for {@code this}
+     * {@link ProtocolInvocationHandler}.  Will search the protocol
+     * interface fields for a configured {@link Marshaller} and use if
+     * found.  Otherwise, this method will return a new
+     * {@link Marshaller} (see {@link #getJAXBContext()}).
+     *
+     * @return  An {@link Marshaller}.
+     */
+    public Marshaller getMarshaller() {
+        synchronized(this) {
+            if (marshaller == null) {
+                marshaller = find(Marshaller.class);
+            }
+
+            if (marshaller == null) {
+                try {
+                    marshaller = getJAXBContext().createMarshaller();
+                    marshaller.setProperty("jaxb.encoding",
+                                           getCharset().name());
+                    marshaller.setProperty("jaxb.formatted.output", true);
+                } catch (JAXBException exception) {
+                    throw new IllegalStateException(exception);
+                }
+            }
+        }
+
+        return marshaller;
+    }
+
+    /**
+     * Method to get an {@link Unmarshaller} for {@code this}
+     * {@link ProtocolInvocationHandler}.  Will search the protocol
+     * interface fields for a configured {@link Unmarshaller} and use if
+     * found.  Otherwise, this method will return a new
+     * {@link Unmarshaller} (see {@link #getJAXBContext()}).
+     *
+     * @return  An {@link Unmarshaller}.
+     */
+    public Unmarshaller getUnmarshaller() {
+        synchronized(this) {
+            if (unmarshaller == null) {
+                unmarshaller = find(Unmarshaller.class);
+            }
+
+            if (unmarshaller == null) {
+                try {
+                    unmarshaller = getJAXBContext().createUnmarshaller();
+                } catch (JAXBException exception) {
+                    throw new IllegalStateException(exception);
+                }
+            }
+        }
+
+        return unmarshaller;
     }
 
     /**
@@ -485,7 +619,9 @@ public class ProtocolInvocationHandler implements InvocationHandler {
                       HttpEntity argument) throws Throwable {
         if (! isNil(annotation.value())) {
             ((AbstractHttpEntity) argument)
-                .setContentType(ContentType.parse(annotation.value())
+                .setContentType(ContentType
+                                .parse(annotation.value())
+                                .withCharset(getCharset())
                                 .toString());
         }
 
@@ -557,17 +693,31 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
+     * Method to process a {@link JAXB} parameter {@link Annotation}.
+     *
+     * @param   annotation      The {@link JAXB} {@link Annotation}.
+     * @param   argument        The {@link Object} to marshal.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    public void apply(JAXB annotation, Object argument) throws Throwable {
+        ((HttpEntityEnclosingRequestBase) request)
+            .setEntity(new JAXBHttpEntity(argument));
+    }
+
+    /**
      * Method to process a {@link JSON} parameter {@link Annotation}.
      *
      * @param   annotation      The {@link JSON} {@link Annotation}.
-     * @param   argument        The {@link JSON} value.
+     * @param   argument        The {@link Object} to map.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
     public void apply(JSON annotation, Object argument) throws Throwable {
         ((HttpEntityEnclosingRequestBase) request)
-            .setEntity(new JSONEntity(getObjectMapper(), argument));
+            .setEntity(new JSONHttpEntity(argument));
     }
 
     /**
@@ -581,14 +731,13 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      */
     public void apply(JSONProperty annotation,
                       Object argument) throws Throwable {
-        JSONEntity entity =
-            (JSONEntity)
+        JSONHttpEntity entity =
+            (JSONHttpEntity)
             ((HttpEntityEnclosingRequestBase) request).getEntity();
 
         if (entity == null) {
             entity =
-                new JSONEntity(getObjectMapper(),
-                               getObjectMapper().createObjectNode());
+                new JSONHttpEntity(getObjectMapper().createObjectNode());
             ((HttpEntityEnclosingRequestBase) request).setEntity(entity);
         }
 
@@ -764,6 +913,116 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     @Override
     public String toString() { return String.valueOf(client); }
 
+    private class JAXBHttpEntity extends AbstractHttpEntity {
+        private final Object object;
+
+        public JAXBHttpEntity(Object object) {
+            super();
+
+            setChunked(false);
+            setContentType(ContentType.APPLICATION_XML
+                           .withCharset(ProtocolInvocationHandler.this
+                                        .getCharset())
+                           .toString());
+
+            if (object != null) {
+                this.object = object;
+            } else {
+                throw new NullPointerException("object");
+            }
+        }
+
+        public Object getObject() { return object; }
+
+        @Override
+        public boolean isRepeatable() { return true; }
+
+        @Override
+        public long getContentLength() { return -1; }
+
+        @Override
+        public InputStream getContent() throws IOException,
+                                               IllegalStateException {
+            ByteArrayDataSource ds = new ByteArrayDataSource(null, null);
+            OutputStream out = null;
+
+            try {
+                out = ds.getOutputStream();
+                writeTo(out);
+            } finally {
+                IOUtil.close(out);
+            }
+
+            return ds.getInputStream();
+        }
+
+        @Override
+        public void writeTo(OutputStream out) throws IOException {
+            try {
+                ProtocolInvocationHandler.this.getMarshaller()
+                    .marshal(getObject(), out);
+            } catch (JAXBException exception) {
+                throw new IOException(exception);
+            }
+        }
+
+        @Override
+        public boolean isStreaming() { return false; }
+    }
+
+    private class JSONHttpEntity extends AbstractHttpEntity {
+        private final Object object;
+
+        public JSONHttpEntity(Object object) {
+            super();
+
+            setChunked(false);
+            setContentType(ContentType.APPLICATION_JSON
+                           .withCharset(ProtocolInvocationHandler.this
+                                        .getCharset())
+                           .toString());
+
+            if (object != null) {
+                this.object = object;
+            } else {
+                throw new NullPointerException("object");
+            }
+        }
+
+        public Object getObject() { return object; }
+
+        @Override
+        public boolean isRepeatable() { return true; }
+
+        @Override
+        public long getContentLength() { return -1; }
+
+        @Override
+        public InputStream getContent() throws IOException,
+                                               IllegalStateException {
+            ByteArrayDataSource ds = new ByteArrayDataSource(null, null);
+            OutputStream out = null;
+
+            try {
+                out = ds.getOutputStream();
+                writeTo(out);
+            } finally {
+                IOUtil.close(out);
+            }
+
+            return ds.getInputStream();
+        }
+
+        @Override
+        public void writeTo(OutputStream out) throws IOException {
+            ProtocolInvocationHandler.this.
+                getObjectMapper().writeValue(out, getObject());
+        }
+
+        @Override
+        public boolean isStreaming() { return false; }
+    }
+
     private class ResponseHandlerImpl extends AbstractResponseHandler<Object> {
         private final Class<?> type;
 
@@ -794,23 +1053,49 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         }
 
         @Override
-        public Object handleEntity(HttpEntity entity) throws IOException {
+        public Object handleEntity(HttpEntity entity) throws ClientProtocolException,
+                                                             IOException {
             Object object = null;
 
             if (entity != null) {
-                InputStream in = null;
+                ContentType contentType =
+                    ContentType.getLenientOrDefault(entity);
 
-                try {
-                    in = entity.getContent();
-                    object =
-                        ProtocolInvocationHandler.this.getObjectMapper()
-                        .readValue(in, type);
-                } finally {
-                    IOUtil.close(in);
+                if (sameMimeType(ContentType.APPLICATION_JSON, contentType)) {
+                    InputStream in = null;
+
+                    try {
+                        in = entity.getContent();
+                        object =
+                            ProtocolInvocationHandler.this.getObjectMapper()
+                            .readValue(in, type);
+                    } finally {
+                        IOUtil.close(in);
+                    }
+                } else if (sameMimeType(ContentType.APPLICATION_XML, contentType)) {
+                    InputStream in = null;
+
+                    try {
+                        in = entity.getContent();
+                        object =
+                            ProtocolInvocationHandler.this.getJAXBContext()
+                            .createUnmarshaller()
+                            .unmarshal(in);
+                    } catch (JAXBException exception) {
+                        throw new IOException(exception);
+                    } finally {
+                        IOUtil.close(in);
+                    }
+                } else {
+                    throw new ClientProtocolException(contentType.toString());
                 }
             }
 
             return object;
+        }
+
+        private boolean sameMimeType(ContentType left, ContentType right) {
+            return left.getMimeType().equalsIgnoreCase(right.getMimeType());
         }
 
         @Override
