@@ -73,6 +73,8 @@ import org.apache.http.entity.FileEntity;
 import org.apache.http.impl.client.AbstractResponseHandler;
 
 import static ball.util.StringUtil.isNil;
+import static org.apache.http.entity.ContentType.APPLICATION_JSON;
+import static org.apache.http.entity.ContentType.APPLICATION_XML;
 
 /**
  * Protocol {@link InvocationHandler} for {@link ProtocolClientBuilder}.
@@ -1049,10 +1051,12 @@ public class ProtocolInvocationHandler implements InvocationHandler {
                                                                    IOException {
             Object object = null;
 
-            if (HttpResponse.class.isAssignableFrom(type)) {
+            if (type.isAssignableFrom(HttpResponse.class)) {
                 object = response;
-            } else if (HttpEntity.class.isAssignableFrom(type)) {
+            } else if (type.isAssignableFrom(HttpEntity.class)) {
                 object = response.getEntity();
+            } else if (type.isAssignableFrom(InputStream.class)) {
+                object = response.getEntity().getContent();
             } else {
                 object = super.handleResponse(response);
             }
@@ -1069,7 +1073,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
                 ContentType contentType =
                     ContentType.getLenientOrDefault(entity);
 
-                if (sameMimeType(ContentType.APPLICATION_JSON, contentType)) {
+                if (sameMimeType(APPLICATION_JSON, contentType)) {
                     InputStream in = null;
 
                     try {
@@ -1080,7 +1084,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
                     } finally {
                         IOUtil.close(in);
                     }
-                } else if (sameMimeType(ContentType.APPLICATION_XML, contentType)) {
+                } else if (sameMimeType(APPLICATION_XML, contentType)) {
                     InputStream in = null;
 
                     try {
