@@ -6,6 +6,7 @@
 package ball.http;
 
 import ball.activation.ByteArrayDataSource;
+import ball.http.URIBuilderFactory;
 import ball.http.annotation.DELETE;
 import ball.http.annotation.Entity;
 import ball.http.annotation.GET;
@@ -25,7 +26,6 @@ import ball.http.annotation.QueryParameter;
 import ball.http.annotation.QueryParameters;
 import ball.http.annotation.URIParameter;
 import ball.http.annotation.URISpecification;
-import ball.http.client.URIBuilderFactory;
 import ball.io.IOUtil;
 import ball.util.ClassOrder;
 import com.fasterxml.jackson.databind.JsonNode;

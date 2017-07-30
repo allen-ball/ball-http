@@ -1,3 +1,8 @@
+2017-07-29  Allen D. Ball  <ball@sol>
+
+	* src/main/java/ball/http/URIBuilderFactory.java:
+	Moved URIBuilderFactory to ball.http package.
+
 2017-07-27  Allen D. Ball  <ball@sol>
 
 	* src/main/java/ball/http/ProtocolInvocationHandler.java:
