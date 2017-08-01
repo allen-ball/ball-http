@@ -23,6 +23,7 @@ import ball.http.annotation.POST;
 import ball.http.annotation.PUT;
 import ball.http.annotation.PathParameter;
 import ball.http.annotation.PathParameters;
+import ball.http.annotation.Protocol;
 import ball.http.annotation.QueryParameter;
 import ball.http.annotation.QueryParameters;
 import ball.http.annotation.URIParameter;
@@ -164,25 +165,53 @@ public class ProtocolInvocationHandler implements InvocationHandler {
 
     /**
      * Method to get a {@link Charset} for {@code this}
-     * {@link ProtocolInvocationHandler}.  Will search the protocol
-     * interface fields for a configured {@link Charset} and use if
-     * found.  Otherwise, this method will return a
-     * {@link Charset#forName(String)} for {@code UTF-8}.
+     * {@link ProtocolInvocationHandler}.  See {@link Protocol}.
      *
      * @return  An {@link Charset}.
      */
     public Charset getCharset() {
         synchronized(this) {
             if (charset == null) {
-                charset = find(Charset.class);
-            }
+                String name =
+                    (String) getProtocolAnnotationValueOf(Protocol.class,
+                                                          "charset");
 
-            if (charset == null) {
-                charset = Charset.forName("UTF-8");
+                charset = Charset.forName(name);
             }
         }
 
         return charset;
+    }
+
+    private Object getProtocolAnnotationValueOf(Class<? extends Annotation> type,
+                                                String name) {
+        Object object = null;
+
+        try {
+            Method method = Protocol.class.getMethod(name);
+
+            if (object == null) {
+                for (Class<?> protocol : protocols) {
+                    Annotation annotation = protocol.getAnnotation(type);
+
+                    if (annotation != null) {
+                        object = method.invoke(annotation);
+
+                        if (object != null) {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (object == null) {
+                object = method.getDefaultValue();
+            }
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+
+        return object;
     }
 
     /**
