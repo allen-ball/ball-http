@@ -22,16 +22,18 @@ import org.apache.http.impl.client.CloseableHttpClient;
  * {@link java.lang.annotation.Annotation}s are documented in the
  * {@code apply(Annotation,...)} methods.
  * </p><p>
- * If the interface method return type is a subclass of
- * {@link org.apache.http.HttpRequest} then the constructed request is
- * simply returned.  Otherwise, the request is executed.
+ * If the interface method return type is any subclass of
+ * {@link org.apache.http.HttpMessage} and assignable from the constructed
+ * request then the constructed request is simply returned.  Otherwise, the
+ * request is executed.
  * </p><p>
- * The {@link ProtocolInvocationHandler} installs a
- * {@link org.apache.http.client.ResponseHandler} that will support
- * {@link org.apache.http.HttpResponse} and
- * {@link org.apache.http.HttpEntity} in addition to parsing entities with
- * an {@link com.fasterxml.jackson.databind.ObjectMapper} (see
- * {@link ProtocolInvocationHandler#getObjectMapper()}).
+ * If the interface method return type is
+ * {@link org.apache.http.HttpResponse} the request is executed and the
+ * response is returned.  The caller is responsible for consuming the
+ * entity.  Otherwise, the {@link ProtocolInvocationHandler} installs a
+ * {@link org.apache.http.client.ResponseHandler} that will parse the
+ * entities.  See {@link ProtocolInvocationHandler#getUnmarshaller()}
+ * and {@link ProtocolInvocationHandler#getObjectMapper()}.
  * </p><p>
  * Protocol API authors should consider designing protocol methods to throw
  * {@link org.apache.http.client.HttpResponseException},

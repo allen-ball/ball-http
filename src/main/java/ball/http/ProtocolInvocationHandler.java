@@ -56,7 +56,6 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
@@ -71,6 +70,8 @@ import org.apache.http.entity.AbstractHttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.impl.client.AbstractResponseHandler;
+import org.apache.http.protocol.HttpCoreContext;
+import org.apache.http.util.EntityUtils;
 
 import static ball.util.StringUtil.isNil;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
@@ -84,19 +85,9 @@ import static org.apache.http.entity.ContentType.APPLICATION_XML;
  */
 public class ProtocolInvocationHandler implements InvocationHandler {
     private static final String APPLY = "apply";
-    private static final String AS = "as";
 
-    /**
-     * {@link Set} of supported protocol interface and method
-     * {@link Annotation} types.
-     */
-    public static final Set<Class<? extends Annotation>> SUPPORTED_INTERFACE_ANNOTATION_TYPES;
-
-    /**
-     * {@link Set} of supported protocol method parameter {@link Annotation}
-     * types.
-     */
-    public static final Set<Class<? extends Annotation>> SUPPORTED_PARAMETER_ANNOTATION_TYPES;
+    private static final Set<Class<? extends Annotation>> INTERFACE_ANNOTATIONS;
+    private static final Set<Class<? extends Annotation>> PARAMETER_ANNOTATIONS;
 
     static {
         TreeSet<Class<? extends Annotation>> interfaceAnnotationTypes =
@@ -104,7 +95,8 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         TreeSet<Class<? extends Annotation>> parameterAnnotationTypes =
             new TreeSet<>(ClassOrder.NAME);
 
-        for (Method method : ProtocolInvocationHandler.class.getMethods()) {
+        for (Method method :
+                 ProtocolInvocationHandler.class.getDeclaredMethods()) {
             String name = method.getName();
             Class<?>[] types = method.getParameterTypes();
             /*
@@ -133,20 +125,20 @@ public class ProtocolInvocationHandler implements InvocationHandler {
             }
         }
 
-        SUPPORTED_INTERFACE_ANNOTATION_TYPES =
+        INTERFACE_ANNOTATIONS =
             Collections.unmodifiableSet(interfaceAnnotationTypes);
-        SUPPORTED_PARAMETER_ANNOTATION_TYPES =
+        PARAMETER_ANNOTATIONS =
             Collections.unmodifiableSet(parameterAnnotationTypes);
     }
 
     private final HttpClient client;
     private final LinkedHashSet<Class<?>> protocols = new LinkedHashSet<>();
     private transient Charset charset = null;
-    private transient JAXBContext context = null;
+    private transient JAXBContext jaxb = null;
     private transient Marshaller marshaller = null;
     private transient Unmarshaller unmarshaller = null;
-    private transient ObjectMapper mapper = null;
-    private transient HttpHost target = null;
+    private transient ObjectMapper json = null;
+    private transient HttpCoreContext context = new HttpCoreContext();
     private transient URIBuilder uri = null;
     private transient LinkedHashMap<String,String> pathMap = null;
     private transient LinkedHashMap<String,String> queryMap = null;
@@ -204,36 +196,22 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      */
     public JAXBContext getJAXBContext() {
         synchronized(this) {
-            if (context == null) {
-                context = find(JAXBContext.class);
+            if (jaxb == null) {
+                jaxb = find(JAXBContext.class);
             }
 
-            if (context == null) {
-                TreeSet<Class<?>> classes = new TreeSet<>(ClassOrder.NAME);
-
-                for (Class<?> protocol : protocols) {
-                    for (Method method : protocol.getMethods()) {
-                        Collections.addAll(classes, method.getReturnType());
-
-                        Class<?>[] types = method.getParameterTypes();
-
-                        if (types != null) {
-                            Collections.addAll(classes, types);
-                        }
-                    }
-                }
-
+            if (jaxb == null) {
                 try {
-                    Class<?>[] types = classes.toArray(new Class<?>[] { });
-
-                    context = JAXBContext.newInstance(types);
+                    jaxb =
+                        JAXBContext
+                        .newInstance(protocols.toArray(new Class<?>[] { }));
                 } catch (JAXBException exception) {
                     throw new IllegalStateException(exception);
                 }
             }
         }
 
-        return context;
+        return jaxb;
     }
 
     /**
@@ -304,16 +282,16 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      */
     public ObjectMapper getObjectMapper() {
         synchronized(this) {
-            if (mapper == null) {
-                mapper = find(ObjectMapper.class);
+            if (json == null) {
+                json = find(ObjectMapper.class);
             }
 
-            if (mapper == null) {
-                mapper = new ObjectMapper();
+            if (json == null) {
+                json = new ObjectMapper();
             }
         }
 
-        return mapper;
+        return json;
     }
 
     private <T> T find(Class<T> type) {
@@ -355,8 +333,8 @@ public class ProtocolInvocationHandler implements InvocationHandler {
             /*
              * Process annotations.
              */
-            apply(method.getDeclaringClass().getAnnotations());
-            apply(method.getAnnotations());
+            process(method.getDeclaringClass().getAnnotations());
+            process(method.getAnnotations());
 
             Annotation[][] annotations = method.getParameterAnnotations();
             Class<?>[] types = method.getParameterTypes();
@@ -366,7 +344,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
                     request = (HttpRequest) argv[i];
                 }
 
-                apply(annotations[i], types[i], argv[i]);
+                process(annotations[i], types[i], argv[i]);
             }
             /*
              * Apply URI path and query parameters and build the URI.
@@ -388,27 +366,21 @@ public class ProtocolInvocationHandler implements InvocationHandler {
              * Execute the request and return the result (unless the
              * protocol specifies that the request should be returned).
              */
-            if (request != null) {
-                Class<?> returnType = method.getReturnType();
+            Class<?> returnType = method.getReturnType();
 
-                if (! returnType.isAssignableFrom(request.getClass())) {
-                    if (request instanceof HttpUriRequest) {
-                        result =
-                            ((HttpClient) proxy)
-                            .execute((HttpUriRequest) request,
-                                     new ResponseHandlerImpl(returnType));
-                    } else {
-                        result =
-                            ((HttpClient) proxy)
-                            .execute(target,
-                                     (HttpRequest) request,
-                                     new ResponseHandlerImpl(returnType));
-                    }
-                } else {
-                    result = returnType.cast(request);
-                }
+            if (returnType.isAssignableFrom(request.getClass())) {
+                result = returnType.cast(request);
             } else {
-                result = null;
+                if (returnType.isAssignableFrom(HttpResponse.class)) {
+                    result =
+                        ((HttpClient) proxy)
+                        .execute((HttpUriRequest) request, context);
+                } else {
+                    result =
+                        ((HttpClient) proxy)
+                        .execute((HttpUriRequest) request,
+                                 new ResponseHandlerImpl(returnType), context);
+                }
             }
         } else {
             result = method.invoke(client, argv);
@@ -417,17 +389,17 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         return result;
     }
 
-    private void apply(Annotation[] annotations) throws Throwable {
+    private void process(Annotation[] annotations) throws Throwable {
         for (int i = 0; i < annotations.length; i += 1) {
-            apply(annotations[i]);
+            process(annotations[i]);
         }
     }
 
-    private void apply(Annotation annotation) throws Throwable {
+    private void process(Annotation annotation) throws Throwable {
         try {
-            if (SUPPORTED_INTERFACE_ANNOTATION_TYPES.contains(annotation.annotationType())) {
+            if (INTERFACE_ANNOTATIONS.contains(annotation.annotationType())) {
                 getClass()
-                    .getMethod(APPLY, annotation.annotationType())
+                    .getDeclaredMethod(APPLY, annotation.annotationType())
                     .invoke(this, annotation);
             }
         } catch (NoSuchMethodException exception) {
@@ -438,24 +410,25 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         }
     }
 
-    private void apply(Annotation[] annotations,
-                       Class<?> type, Object argument) throws Throwable {
+    private void process(Annotation[] annotations,
+                         Class<?> type, Object argument) throws Throwable {
         for (int i = 0; i < annotations.length; i += 1) {
-            apply(annotations[i], type, argument);
+            process(annotations[i], type, argument);
         }
     }
 
-    private void apply(Annotation annotation,
-                       Class<?> type, Object argument) throws Throwable {
+    private void process(Annotation annotation,
+                         Class<?> type, Object argument) throws Throwable {
         try {
-            if (SUPPORTED_PARAMETER_ANNOTATION_TYPES.contains(annotation.annotationType())) {
+            if (PARAMETER_ANNOTATIONS.contains(annotation.annotationType())) {
                 getClass()
-                    .getMethod(APPLY, annotation.annotationType(), type)
+                    .getDeclaredMethod(APPLY,
+                                       annotation.annotationType(), type)
                     .invoke(this, annotation, argument);
             }
         } catch (NoSuchMethodException exception) {
             if (! Object.class.equals(type)) {
-                apply(annotation, Object.class, argument);
+                process(annotation, Object.class, argument);
             } else {
                 throw new IllegalStateException(exception);
             }
@@ -466,7 +439,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
-     * Method to process an {@link URISpecification} {@link Annotation}.
+     * {@link URISpecification} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link URISpecification}
      *                          {@link Annotation}.
@@ -474,19 +447,19 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(URISpecification annotation) throws Throwable {
+    protected void apply(URISpecification annotation) throws Throwable {
         uri = URIBuilderFactory.getDefault().getInstance(annotation);
     }
 
     /**
-     * Method to process a {@link DELETE} {@link Annotation}.
+     * {@link DELETE} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link DELETE} {@link Annotation}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(DELETE annotation) throws Throwable {
+    protected void apply(DELETE annotation) throws Throwable {
         request = annotation.type().getConstructor().newInstance();
 
         if (! isNil(annotation.value())) {
@@ -495,7 +468,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
-     * Method to process a {@link HttpMessageType} {@link Annotation}.
+     * {@link HttpMessageType} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link HttpMessageType}
      *                          {@link Annotation}.
@@ -503,19 +476,19 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(HttpMessageType annotation) throws Throwable {
+    protected void apply(HttpMessageType annotation) throws Throwable {
         request = annotation.value().getConstructor().newInstance();
     }
 
     /**
-     * Method to process a {@link GET} {@link Annotation}.
+     * {@link GET} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link GET} {@link Annotation}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(GET annotation) throws Throwable {
+    protected void apply(GET annotation) throws Throwable {
         request = annotation.type().getConstructor().newInstance();
 
         if (! isNil(annotation.value())) {
@@ -524,14 +497,14 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
-     * Method to process a {@link HEAD} {@link Annotation}.
+     * {@link HEAD} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link HEAD} {@link Annotation}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(HEAD annotation) throws Throwable {
+    protected void apply(HEAD annotation) throws Throwable {
         request = annotation.type().getConstructor().newInstance();
 
         if (! isNil(annotation.value())) {
@@ -540,14 +513,14 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
-     * Method to process a {@link OPTIONS} {@link Annotation}.
+     * {@link OPTIONS} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link OPTIONS} {@link Annotation}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(OPTIONS annotation) throws Throwable {
+    protected void apply(OPTIONS annotation) throws Throwable {
         request = annotation.type().getConstructor().newInstance();
 
         if (! isNil(annotation.value())) {
@@ -556,14 +529,14 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
-     * Method to process a {@link PATCH} {@link Annotation}.
+     * {@link PATCH} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link PATCH} {@link Annotation}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(PATCH annotation) throws Throwable {
+    protected void apply(PATCH annotation) throws Throwable {
         request = annotation.type().getConstructor().newInstance();
 
         if (! isNil(annotation.value())) {
@@ -572,14 +545,14 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
-     * Method to process a {@link POST} {@link Annotation}.
+     * {@link POST} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link POST} {@link Annotation}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(POST annotation) throws Throwable {
+    protected void apply(POST annotation) throws Throwable {
         request = annotation.type().getConstructor().newInstance();
 
         if (! isNil(annotation.value())) {
@@ -588,14 +561,14 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
-     * Method to process a {@link PUT} {@link Annotation}.
+     * {@link PUT} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link PUT} {@link Annotation}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(PUT annotation) throws Throwable {
+    protected void apply(PUT annotation) throws Throwable {
         request = annotation.type().getConstructor().newInstance();
 
         if (! isNil(annotation.value())) {
@@ -604,26 +577,26 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
-     * Method to process a {@link Header} {@link Annotation}.
+     * {@link Header} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link Header} {@link Annotation}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(Header annotation) throws Throwable {
+    protected void apply(Header annotation) throws Throwable {
         request.setHeader(annotation.name(), annotation.value());
     }
 
     /**
-     * Method to process a {@link Headers} {@link Annotation}.
+     * {@link Headers} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link Headers} {@link Annotation}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(Headers annotation) throws Throwable {
+    protected void apply(Headers annotation) throws Throwable {
         if (annotation.value() != null) {
             for (Header header : annotation.value()) {
                 apply(header);
@@ -632,7 +605,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
-     * Method to process a {@link PathParameter} {@link Annotation}.
+     * {@link PathParameter} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link PathParameter}
      *                          {@link Annotation}.
@@ -640,12 +613,12 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(PathParameter annotation) throws Throwable {
+    protected void apply(PathParameter annotation) throws Throwable {
         pathMap.put(annotation.name(), annotation.value());
     }
 
     /**
-     * Method to process a {@link PathParameters} {@link Annotation}.
+     * {@link PathParameters} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link PathParameters}
      *                          {@link Annotation}.
@@ -653,7 +626,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(PathParameters annotation) throws Throwable {
+    protected void apply(PathParameters annotation) throws Throwable {
         if (annotation.value() != null) {
             for (PathParameter header : annotation.value()) {
                 apply(header);
@@ -662,7 +635,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
-     * Method to process a {@link Entity} parameter {@link Annotation}.
+     * {@link Entity} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link Entity} {@link Annotation}.
      * @param   argument        The {@link HttpEntity}.
@@ -670,8 +643,8 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(Entity annotation,
-                      HttpEntity argument) throws Throwable {
+    protected void apply(Entity annotation,
+                         HttpEntity argument) throws Throwable {
         if (! isNil(annotation.value())) {
             ((AbstractHttpEntity) argument)
                 .setContentType(ContentType
@@ -684,7 +657,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
-     * Method to process a {@link Entity} parameter {@link Annotation}.
+     * {@link Entity} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link Entity} {@link Annotation}.
      * @param   argument        The {@link File} representing the
@@ -693,12 +666,12 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(Entity annotation, File argument) throws Throwable {
+    protected void apply(Entity annotation, File argument) throws Throwable {
         apply(annotation, new FileEntity(argument));
     }
 
     /**
-     * Method to process a {@link Header} parameter {@link Annotation}.
+     * {@link Header} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link Header} {@link Annotation}.
      * @param   argument        The {@link String} representing the header
@@ -707,7 +680,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(Header annotation, String argument) throws Throwable {
+    protected void apply(Header annotation, String argument) throws Throwable {
         String name = annotation.name();
 
         if (isNil(name)) {
@@ -718,7 +691,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
-     * Method to process a {@link Header} parameter {@link Annotation}.
+     * {@link Header} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link Header} {@link Annotation}.
      * @param   argument        The {@link Object} representing the header
@@ -727,12 +700,12 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(Header annotation, Object argument) throws Throwable {
+    protected void apply(Header annotation, Object argument) throws Throwable {
         apply(annotation, String.valueOf(argument));
     }
 
     /**
-     * Method to process a {@link HostParameter} parameter {@link Annotation}.
+     * {@link HostParameter} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link HostParameter}
      *                          {@link Annotation}.
@@ -742,13 +715,13 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(HostParameter annotation,
-                      String argument) throws Throwable {
+    protected void apply(HostParameter annotation,
+                         String argument) throws Throwable {
         uri.setHost(argument);
     }
 
     /**
-     * Method to process a {@link JAXB} parameter {@link Annotation}.
+     * {@link JAXB} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link JAXB} {@link Annotation}.
      * @param   argument        The {@link Object} to marshal.
@@ -756,13 +729,13 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(JAXB annotation, Object argument) throws Throwable {
+    protected void apply(JAXB annotation, Object argument) throws Throwable {
         ((HttpEntityEnclosingRequestBase) request)
             .setEntity(new JAXBHttpEntity(argument));
     }
 
     /**
-     * Method to process a {@link JSON} parameter {@link Annotation}.
+     * {@link JSON} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link JSON} {@link Annotation}.
      * @param   argument        The {@link Object} to map.
@@ -770,13 +743,13 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(JSON annotation, Object argument) throws Throwable {
+    protected void apply(JSON annotation, Object argument) throws Throwable {
         ((HttpEntityEnclosingRequestBase) request)
             .setEntity(new JSONHttpEntity(argument));
     }
 
     /**
-     * Method to process a {@link PathParameter} parameter {@link Annotation}.
+     * {@link PathParameter} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link PathParameter}
      *                          {@link Annotation}.
@@ -786,8 +759,8 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(PathParameter annotation,
-                      String argument) throws Throwable {
+    protected void apply(PathParameter annotation,
+                         String argument) throws Throwable {
         String name = annotation.name();
 
         if (isNil(name)) {
@@ -798,7 +771,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
-     * Method to process a {@link PathParameter} parameter {@link Annotation}.
+     * {@link PathParameter} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link PathParameter}
      *                          {@link Annotation}.
@@ -808,13 +781,13 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(PathParameter annotation,
-                      Object argument) throws Throwable {
+    protected void apply(PathParameter annotation,
+                         Object argument) throws Throwable {
         apply(annotation, String.valueOf(argument));
     }
 
     /**
-     * Method to process a {@link QueryParameter} {@link Annotation}.
+     * {@link QueryParameter} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link QueryParameter}
      *                          {@link Annotation}.
@@ -822,12 +795,12 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(QueryParameter annotation) throws Throwable {
+    protected void apply(QueryParameter annotation) throws Throwable {
         queryMap.put(annotation.name(), annotation.value());
     }
 
     /**
-     * Method to process a {@link QueryParameters} {@link Annotation}.
+     * {@link QueryParameters} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link QueryParameters}
      *                          {@link Annotation}.
@@ -835,7 +808,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(QueryParameters annotation) throws Throwable {
+    protected void apply(QueryParameters annotation) throws Throwable {
         if (annotation.value() != null) {
             for (QueryParameter parameter : annotation.value()) {
                 apply(parameter);
@@ -844,8 +817,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
-     * Method to process a {@link QueryParameter} parameter
-     * {@link Annotation}.
+     * {@link QueryParameter} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link QueryParameter}
      *                          {@link Annotation}.
@@ -855,8 +827,8 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(QueryParameter annotation,
-                      String argument) throws Throwable {
+    protected void apply(QueryParameter annotation,
+                         String argument) throws Throwable {
         String name = annotation.name();
 
         if (isNil(name)) {
@@ -871,8 +843,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     }
 
     /**
-     * Method to process a {@link QueryParameter} parameter
-     * {@link Annotation}.
+     * {@link QueryParameter} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link QueryParameter}
      *                          {@link Annotation}.
@@ -882,16 +853,15 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(QueryParameter annotation,
-                      Object argument) throws Throwable {
+    protected void apply(QueryParameter annotation,
+                         Object argument) throws Throwable {
         if (argument != null) {
             apply(annotation, String.valueOf(argument));
         }
     }
 
     /**
-     * Method to process a {@link URIParameter} parameter
-     * {@link Annotation}.
+     * {@link URIParameter} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link URIParameter}
      *                          {@link Annotation}.
@@ -900,13 +870,12 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(URIParameter annotation, URI argument) throws Throwable {
+    protected void apply(URIParameter annotation, URI argument) throws Throwable {
         uri = URIBuilderFactory.getDefault().getInstance(argument);
     }
 
     /**
-     * Method to process a {@link URIParameter} parameter
-     * {@link Annotation}.
+     * {@link URIParameter} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link URIParameter}
      *                          {@link Annotation}.
@@ -915,8 +884,8 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    public void apply(URIParameter annotation,
-                      String argument) throws Throwable {
+    protected void apply(URIParameter annotation,
+                         String argument) throws Throwable {
         uri = URIBuilderFactory.getDefault().getInstance(argument);
     }
 
@@ -941,8 +910,6 @@ public class ProtocolInvocationHandler implements InvocationHandler {
                 throw new NullPointerException("object");
             }
         }
-
-        public Object getObject() { return object; }
 
         @Override
         public boolean isRepeatable() { return true; }
@@ -970,7 +937,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         public void writeTo(OutputStream out) throws IOException {
             try {
                 ProtocolInvocationHandler.this.getMarshaller()
-                    .marshal(getObject(), out);
+                    .marshal(object, out);
             } catch (JAXBException exception) {
                 throw new IOException(exception);
             }
@@ -999,8 +966,6 @@ public class ProtocolInvocationHandler implements InvocationHandler {
             }
         }
 
-        public Object getObject() { return object; }
-
         @Override
         public boolean isRepeatable() { return true; }
 
@@ -1026,7 +991,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         @Override
         public void writeTo(OutputStream out) throws IOException {
             ProtocolInvocationHandler.this.
-                getObjectMapper().writeValue(out, getObject());
+                getObjectMapper().writeValue(out, object);
         }
 
         @Override
@@ -1047,60 +1012,39 @@ public class ProtocolInvocationHandler implements InvocationHandler {
         }
 
         @Override
-        public Object handleResponse(HttpResponse response) throws HttpResponseException,
-                                                                   IOException {
-            Object object = null;
-
-            if (type.isAssignableFrom(HttpResponse.class)) {
-                object = response;
-            } else if (type.isAssignableFrom(HttpEntity.class)) {
-                object = response.getEntity();
-            } else if (type.isAssignableFrom(InputStream.class)) {
-                object = response.getEntity().getContent();
-            } else {
-                object = super.handleResponse(response);
-            }
-
-            return object;
-        }
-
-        @Override
         public Object handleEntity(HttpEntity entity) throws ClientProtocolException,
                                                              IOException {
             Object object = null;
+            ContentType contentType =
+                ContentType.getLenientOrDefault(entity);
 
-            if (entity != null) {
-                ContentType contentType =
-                    ContentType.getLenientOrDefault(entity);
+            if (sameMimeType(APPLICATION_JSON, contentType)) {
+                InputStream in = null;
 
-                if (sameMimeType(APPLICATION_JSON, contentType)) {
-                    InputStream in = null;
-
-                    try {
-                        in = entity.getContent();
-                        object =
-                            ProtocolInvocationHandler.this.getObjectMapper()
-                            .readValue(in, type);
-                    } finally {
-                        IOUtil.close(in);
-                    }
-                } else if (sameMimeType(APPLICATION_XML, contentType)) {
-                    InputStream in = null;
-
-                    try {
-                        in = entity.getContent();
-                        object =
-                            ProtocolInvocationHandler.this.getJAXBContext()
-                            .createUnmarshaller()
-                            .unmarshal(in);
-                    } catch (JAXBException exception) {
-                        throw new IOException(exception);
-                    } finally {
-                        IOUtil.close(in);
-                    }
-                } else {
-                    throw new ClientProtocolException(contentType.toString());
+                try {
+                    in = entity.getContent();
+                    object =
+                        ProtocolInvocationHandler.this.getObjectMapper()
+                        .readValue(in, type);
+                } finally {
+                    IOUtil.close(in);
                 }
+            } else if (sameMimeType(APPLICATION_XML, contentType)) {
+                InputStream in = null;
+
+                try {
+                    in = entity.getContent();
+                    object =
+                        ProtocolInvocationHandler.this.getJAXBContext()
+                        .createUnmarshaller()
+                        .unmarshal(in);
+                } catch (JAXBException exception) {
+                    throw new IOException(exception);
+                } finally {
+                    IOUtil.close(in);
+                }
+            } else {
+                object = EntityUtils.toString(entity);
             }
 
             return object;
