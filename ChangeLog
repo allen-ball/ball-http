@@ -1,3 +1,9 @@
+2017-08-01  Allen D. Ball  <ball@sol>
+
+	* Re-factored ProtocolClientBuilder into ProtocolClient,
+	ProtocolInvocationHandler, ProtocolRequestBuilder, and
+	ProtocolResponseHandler.
+
 2017-07-29  Allen D. Ball  <ball@sol>
 
 	* src/main/java/ball/http/URIBuilderFactory.java:

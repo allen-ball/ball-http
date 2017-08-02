@@ -1,0 +1,269 @@
+/*
+ * $Id$
+ *
+ * Copyright 2017 Allen D. Ball.  All rights reserved.
+ */
+package ball.http;
+
+import ball.http.annotation.Protocol;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.nio.charset.Charset;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestInterceptor;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpResponseInterceptor;
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpCoreContext;
+
+/**
+ * Abstract {@link ProtocolClient} base class.
+ *
+ * @param       <P>             The protocol type erasure.
+ * <p>
+ * This class provides:
+ * <ol>
+ *   <li value="1">
+ *     {@link HttpClient} ({@link #client()})
+ *   </li>
+ *   <li value="2">
+ *     {@link HttpContext} ({@link #context()})
+ *   </li>
+ *   <li value="3">
+ *     A {@link Proxy} which implements the annotated protocol interface
+ *   </li>
+ *   <li value="3">
+ *     {@code this} implements {@link HttpRequestInterceptor} and
+ *     and {@link HttpResponseInterceptor} which are configured into
+ *     {@link HttpClientBuilder}; subclasses can override
+ *     {@link #process(HttpRequest,HttpContext)} and
+ *     {@link #process(HttpResponse,HttpContext)}
+ *   </li>
+ * </ol>
+ * <p>
+ * See the {@link ProtocolRequestBuilder} {@code apply(Annotation,...)}
+ * methods for the supported protocol interface {@link Annotation}s.
+ * <p>
+ * See {@link ProtocolRequestBuilder} and
+ * {@link ProtocolInvocationHandler} for a description of how
+ * {@link HttpRequest}s are generated and executed.
+ *
+ * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
+ * @version $Revision$
+ */
+public abstract class ProtocolClient<P> implements HttpRequestInterceptor,
+                                                   HttpResponseInterceptor {
+    private final CloseableHttpClient client;
+    private final HttpCoreContext context;
+    private final Class<? extends P> protocol;
+    private final Object proxy;
+    private transient Charset charset = null;
+    private transient JAXBContext jaxb = null;
+    private transient Marshaller marshaller = null;
+    private transient Unmarshaller unmarshaller = null;
+    private transient ObjectMapper json = null;
+
+    /**
+     * Constructor that creates {@link HttpClientBuilder}
+     * and {@link HttpCoreContext}.
+     *
+     * @param   protocol        The protocol {@link Class}.
+     */
+    protected ProtocolClient(Class<? extends P> protocol) {
+        this(HttpClientBuilder.create(), null, protocol);
+    }
+
+    /**
+     * Constructor that allows the subclass to provide a configured
+     * {@link HttpClientBuilder} and/or {@link HttpCoreContext}.
+     *
+     * @param   builder         A configured {@link HttpClientBuilder}.
+     * @param   context         A {@link HttpCoreContext} (may be
+     *                          {@code null}).
+     * @param   protocol        The protocol {@link Class}.
+     */
+    protected ProtocolClient(HttpClientBuilder builder,
+                             HttpCoreContext context,
+                             Class<? extends P> protocol) {
+        this.client =
+            builder
+            .addInterceptorLast((HttpRequestInterceptor) this)
+            .addInterceptorLast((HttpResponseInterceptor) this)
+            .build();
+
+        this.context = (context != null) ? context : HttpCoreContext.create();
+
+        if (protocol != null) {
+            this.protocol = protocol;
+        } else {
+            throw new NullPointerException("protocol");
+        }
+
+        proxy =
+            Proxy.newProxyInstance(protocol.getClassLoader(),
+                                   new Class<?>[] { protocol },
+                                   new ProtocolInvocationHandler(this));
+    }
+
+    /**
+     * @return  {@link ProtocolClient} {@link CloseableHttpClient}
+     */
+    public CloseableHttpClient client() { return client; }
+
+    /**
+     * @return  {@link ProtocolClient} {@link HttpCoreContext}
+     */
+    public HttpCoreContext context() { return context; }
+
+    /**
+     * @return  {@link #protocol()} {@link Class}
+     */
+    public Class<? extends P> protocol() { return protocol; }
+
+    /**
+     * @return  {@link #protocol()} {@link Proxy}
+     */
+    public P proxy() { return protocol.cast(proxy); }
+
+    /**
+     * @return  {@link Proxy} {@link ProtocolInvocationHandler}
+     */
+    public ProtocolInvocationHandler handler() {
+        return (ProtocolInvocationHandler) Proxy.getInvocationHandler(proxy());
+    }
+
+    /**
+     * @return  {@link #protocol()} configured {@link Charset}
+     */
+    public Charset getCharset() {
+        synchronized (this) {
+            if (charset == null) {
+                String name =
+                    (String) getDefaultedValueOf(protocol(),
+                                                 Protocol.class, "charset");
+
+                charset = Charset.forName(name);
+            }
+        }
+
+        return charset;
+    }
+
+    private Object getDefaultedValueOf(AnnotatedElement element,
+                                       Class<? extends Annotation> type,
+                                       String name) {
+        Object object = null;
+
+        try {
+            Method method = type.getMethod(name);
+
+            if (object == null) {
+                Annotation annotation = element.getAnnotation(type);
+
+                if (annotation != null) {
+                    object = method.invoke(annotation);
+                }
+            }
+
+            if (object == null) {
+                object = method.getDefaultValue();
+            }
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
+
+        return object;
+    }
+
+    /**
+     * @return  {@link #protocol()} configured {@link JAXBContext}
+     */
+    public JAXBContext getJAXBContext() {
+        synchronized(this) {
+            if (jaxb == null) {
+                try {
+                    jaxb =
+                        JAXBContext.newInstance(new Class<?>[] { protocol() });
+                } catch (JAXBException exception) {
+                    throw new IllegalStateException(exception);
+                }
+            }
+        }
+
+        return jaxb;
+    }
+
+    /**
+     * @return  {@link #protocol()} configured {@link Marshaller}
+     */
+    public Marshaller getMarshaller() {
+        synchronized(this) {
+            if (marshaller == null) {
+                try {
+                    marshaller = getJAXBContext().createMarshaller();
+                    marshaller.setProperty("jaxb.encoding",
+                                           getCharset().name());
+                    marshaller.setProperty("jaxb.formatted.output", true);
+                } catch (JAXBException exception) {
+                    throw new IllegalStateException(exception);
+                }
+            }
+        }
+
+        return marshaller;
+    }
+
+    /**
+     * @return  {@link #protocol()} configured {@link Unmarshaller}
+     */
+    public Unmarshaller getUnmarshaller() {
+        synchronized(this) {
+            if (unmarshaller == null) {
+                try {
+                    unmarshaller = getJAXBContext().createUnmarshaller();
+                } catch (JAXBException exception) {
+                    throw new IllegalStateException(exception);
+                }
+            }
+        }
+
+        return unmarshaller;
+    }
+
+    /**
+     * @return  {@link #protocol()} configured {@link ObjectMapper}.
+     */
+    public ObjectMapper getObjectMapper() {
+        synchronized(this) {
+            if (json == null) {
+                json = new ObjectMapper();
+            }
+        }
+
+        return json;
+    }
+
+    @Override
+    public void process(HttpRequest request,
+                        HttpContext context) throws IOException {
+    }
+
+    @Override
+    public void process(HttpResponse response,
+                        HttpContext context) throws IOException {
+    }
+
+    @Override
+    public String toString() { return super.toString(); }
+}
