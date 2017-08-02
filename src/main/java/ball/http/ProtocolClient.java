@@ -45,7 +45,7 @@ import org.apache.http.protocol.HttpCoreContext;
  *   <li value="3">
  *     A {@link Proxy} which implements the annotated protocol interface
  *   </li>
- *   <li value="3">
+ *   <li value="4">
  *     {@code this} implements {@link HttpRequestInterceptor} and
  *     and {@link HttpResponseInterceptor} which are configured into
  *     {@link HttpClientBuilder}; subclasses can override
