@@ -85,7 +85,7 @@ public class ProtocolResponseHandler extends AbstractResponseHandler<Object> {
             object = EntityUtils.toString(entity);
         }
 
-        return type.cast(object);
+        return returnType.cast(object);
     }
 
     private boolean sameMimeType(ContentType left, ContentType right) {
