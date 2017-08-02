@@ -7,6 +7,8 @@ package ball.http;
 
 import ball.http.annotation.Protocol;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -247,7 +249,10 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor,
     public ObjectMapper getObjectMapper() {
         synchronized(this) {
             if (json == null) {
-                json = new ObjectMapper();
+                json =
+                    new ObjectMapper()
+                    .configure(SerializationFeature.INDENT_OUTPUT, true)
+                    .setDateFormat(new ISO8601DateFormat());
             }
         }
 
