@@ -1,3 +1,8 @@
+2017-08-12  Allen D. Ball  <ball@sol>
+
+	* src/main/java/ball/http/ProtocolResponseHandler.java:
+	Handle complex protocol method return types.
+
 2017-08-01  Allen D. Ball  <ball@sol>
 
 	* Re-factored ProtocolClientBuilder into ProtocolClient,

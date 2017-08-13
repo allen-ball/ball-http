@@ -65,7 +65,7 @@ public class ProtocolInvocationHandler implements InvocationHandler {
                 result =
                     client.client()
                     .execute((HttpUriRequest) request,
-                             new ProtocolResponseHandler(client, returnType),
+                             new ProtocolResponseHandler(client, method),
                              client.context());
             }
         }
