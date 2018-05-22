@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017 Allen D. Ball.  All rights reserved.
+ * Copyright 2017, 2018 Allen D. Ball.  All rights reserved.
  */
 package ball.http.annotation.processing;
 
@@ -41,6 +41,7 @@ public class HttpMessageTypeProcessor extends AbstractAnnotationProcessor {
                            TypeElement annotation,
                            Element element) throws Exception {
         switch (element.getKind()) {
+        case ANNOTATION_TYPE:
         case INTERFACE:
             break;
 

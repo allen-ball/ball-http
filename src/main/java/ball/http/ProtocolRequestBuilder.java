@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017 Allen D. Ball.  All rights reserved.
+ * Copyright 2017, 2018 Allen D. Ball.  All rights reserved.
  */
 package ball.http;
 
@@ -255,22 +255,6 @@ public class ProtocolRequestBuilder {
     }
 
     /**
-     * {@link DELETE} interface/method {@link Annotation}
-     *
-     * @param   annotation      The {@link DELETE} {@link Annotation}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(DELETE annotation) throws Throwable {
-        request = annotation.type().getConstructor().newInstance();
-
-        if (! isNil(annotation.value())) {
-            uri.setPath(annotation.value());
-        }
-    }
-
-    /**
      * {@link HttpMessageType} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link HttpMessageType}
@@ -284,6 +268,23 @@ public class ProtocolRequestBuilder {
     }
 
     /**
+     * {@link DELETE} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link DELETE} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(DELETE annotation) throws Throwable {
+        apply(annotation.annotationType()
+              .getAnnotation(HttpMessageType.class));
+
+        if (! isNil(annotation.value())) {
+            uri.setPath(annotation.value());
+        }
+    }
+
+    /**
      * {@link GET} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link GET} {@link Annotation}.
@@ -292,7 +293,8 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void apply(GET annotation) throws Throwable {
-        request = annotation.type().getConstructor().newInstance();
+        apply(annotation.annotationType()
+              .getAnnotation(HttpMessageType.class));
 
         if (! isNil(annotation.value())) {
             uri.setPath(annotation.value());
@@ -308,7 +310,8 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void apply(HEAD annotation) throws Throwable {
-        request = annotation.type().getConstructor().newInstance();
+        apply(annotation.annotationType()
+              .getAnnotation(HttpMessageType.class));
 
         if (! isNil(annotation.value())) {
             uri.setPath(annotation.value());
@@ -324,7 +327,8 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void apply(OPTIONS annotation) throws Throwable {
-        request = annotation.type().getConstructor().newInstance();
+        apply(annotation.annotationType()
+              .getAnnotation(HttpMessageType.class));
 
         if (! isNil(annotation.value())) {
             uri.setPath(annotation.value());
@@ -340,7 +344,8 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void apply(PATCH annotation) throws Throwable {
-        request = annotation.type().getConstructor().newInstance();
+        apply(annotation.annotationType()
+              .getAnnotation(HttpMessageType.class));
 
         if (! isNil(annotation.value())) {
             uri.setPath(annotation.value());
@@ -356,7 +361,8 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void apply(POST annotation) throws Throwable {
-        request = annotation.type().getConstructor().newInstance();
+        apply(annotation.annotationType()
+              .getAnnotation(HttpMessageType.class));
 
         if (! isNil(annotation.value())) {
             uri.setPath(annotation.value());
@@ -372,7 +378,8 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void apply(PUT annotation) throws Throwable {
-        request = annotation.type().getConstructor().newInstance();
+        apply(annotation.annotationType()
+              .getAnnotation(HttpMessageType.class));
 
         if (! isNil(annotation.value())) {
             uri.setPath(annotation.value());

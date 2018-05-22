@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017 Allen D. Ball.  All rights reserved.
+ * Copyright 2017, 2018 Allen D. Ball.  All rights reserved.
  */
 package ball.http.annotation;
 
@@ -24,7 +24,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Documented
 @Retention(RUNTIME)
 @Target({ METHOD })
+@HttpMessageType(HttpDelete.class)
 public @interface DELETE {
     String value() default NIL;
-    Class<? extends HttpDelete> type() default HttpDelete.class;
 }

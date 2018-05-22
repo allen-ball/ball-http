@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017 Allen D. Ball.  All rights reserved.
+ * Copyright 2017, 2018 Allen D. Ball.  All rights reserved.
  */
 package ball.http.annotation;
 
@@ -11,6 +11,7 @@ import java.lang.annotation.Target;
 import org.apache.http.HttpMessage;
 
 import static ball.util.StringUtil.NIL;
+import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -24,7 +25,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  */
 @Documented
 @Retention(RUNTIME)
-@Target({ TYPE, METHOD })
+@Target({ ANNOTATION_TYPE, METHOD, TYPE })
 public @interface HttpMessageType {
     Class<? extends HttpMessage> value();
 }
