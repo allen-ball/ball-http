@@ -738,32 +738,6 @@ public class ProtocolRequestBuilder {
     }
 
     /**
-     * {@link javax.ws.rs.Encoded} method parameter {@link Annotation}
-     *
-     * @param   annotation      The {@link javax.ws.rs.Encoded}
-     *                          {@link Annotation}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(javax.ws.rs.Encoded annotation) throws Throwable {
-        throw new UnsupportedOperationException(annotation.toString());
-    }
-
-    /**
-     * {@link javax.ws.rs.Path} method parameter {@link Annotation}
-     *
-     * @param   annotation      The {@link javax.ws.rs.Path}
-     *                          {@link Annotation}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(javax.ws.rs.Path annotation) throws Throwable {
-        appendURIPath(annotation.value());
-    }
-
-    /**
      * {@link javax.ws.rs.DELETE} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link javax.ws.rs.DELETE}
@@ -839,6 +813,58 @@ public class ProtocolRequestBuilder {
      */
     protected void apply(javax.ws.rs.PUT annotation) throws Throwable {
         request = new HttpPut();
+    }
+
+    /**
+     * {@link javax.ws.rs.Encoded} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.Encoded}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.Encoded annotation) throws Throwable {
+        throw new UnsupportedOperationException(annotation.toString());
+    }
+
+    /**
+     * {@link javax.ws.rs.Path} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.Path}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.Path annotation) throws Throwable {
+        appendURIPath(annotation.value());
+    }
+
+    /**
+     * {@link javax.ws.rs.Consumes} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.Consumes}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.Consumes annotation) throws Throwable {
+        throw new UnsupportedOperationException(annotation.toString());
+    }
+
+    /**
+     * {@link javax.ws.rs.Produces} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.Produces}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.Produces annotation) throws Throwable {
+        throw new UnsupportedOperationException(annotation.toString());
     }
 
     /**
