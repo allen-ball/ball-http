@@ -1,5 +1,8 @@
 2018-05-23  Allen D. Ball  <ball@sol.local>
 
+	* Made ball.http.annotation.* annotation names consistent with
+	javax.ws.rs.* standards.
+
 	* src/main/java/ball/http/ProtocolRequestBuilder.java:
 	Added support for javax.ws.rs annotations.
 

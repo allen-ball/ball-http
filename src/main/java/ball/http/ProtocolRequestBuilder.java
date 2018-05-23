@@ -12,7 +12,7 @@ import ball.http.annotation.GET;
 import ball.http.annotation.HEAD;
 import ball.http.annotation.Header;
 import ball.http.annotation.Headers;
-import ball.http.annotation.HostParameter;
+import ball.http.annotation.HostParam;
 import ball.http.annotation.HttpMessageType;
 import ball.http.annotation.JAXB;
 import ball.http.annotation.JSON;
@@ -20,11 +20,11 @@ import ball.http.annotation.OPTIONS;
 import ball.http.annotation.PATCH;
 import ball.http.annotation.POST;
 import ball.http.annotation.PUT;
-import ball.http.annotation.PathParameter;
-import ball.http.annotation.PathParameters;
-import ball.http.annotation.QueryParameter;
-import ball.http.annotation.QueryParameters;
-import ball.http.annotation.URIParameter;
+import ball.http.annotation.PathParam;
+import ball.http.annotation.PathParams;
+import ball.http.annotation.QueryParam;
+import ball.http.annotation.QueryParams;
+import ball.http.annotation.URIParam;
 import ball.http.annotation.URISpecification;
 import ball.io.IOUtil;
 import ball.util.ClassOrder;
@@ -464,30 +464,28 @@ public class ProtocolRequestBuilder {
     }
 
     /**
-     * {@link PathParameter} interface/method {@link Annotation}
+     * {@link PathParam} interface/method {@link Annotation}
      *
-     * @param   annotation      The {@link PathParameter}
-     *                          {@link Annotation}.
+     * @param   annotation      The {@link PathParam} {@link Annotation}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    protected void apply(PathParameter annotation) throws Throwable {
+    protected void apply(PathParam annotation) throws Throwable {
         pathMap.put(annotation.name(), annotation.value());
     }
 
     /**
-     * {@link PathParameters} interface/method {@link Annotation}
+     * {@link PathParams} interface/method {@link Annotation}
      *
-     * @param   annotation      The {@link PathParameters}
-     *                          {@link Annotation}.
+     * @param   annotation      The {@link PathParams} {@link Annotation}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    protected void apply(PathParameters annotation) throws Throwable {
+    protected void apply(PathParams annotation) throws Throwable {
         if (annotation.value() != null) {
-            for (PathParameter header : annotation.value()) {
+            for (PathParam header : annotation.value()) {
                 apply(header);
             }
         }
@@ -564,17 +562,16 @@ public class ProtocolRequestBuilder {
     }
 
     /**
-     * {@link HostParameter} method parameter {@link Annotation}
+     * {@link HostParam} method parameter {@link Annotation}
      *
-     * @param   annotation      The {@link HostParameter}
-     *                          {@link Annotation}.
+     * @param   annotation      The {@link HostParam} {@link Annotation}.
      * @param   argument        The {@link String} representing the host
      *                          parameter value.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    protected void apply(HostParameter annotation,
+    protected void apply(HostParam annotation,
                          String argument) throws Throwable {
         uri.setHost(argument);
     }
@@ -608,17 +605,16 @@ public class ProtocolRequestBuilder {
     }
 
     /**
-     * {@link PathParameter} method parameter {@link Annotation}
+     * {@link PathParam} method parameter {@link Annotation}
      *
-     * @param   annotation      The {@link PathParameter}
-     *                          {@link Annotation}.
+     * @param   annotation      The {@link PathParam} {@link Annotation}.
      * @param   argument        The {@link String} representing the path
      *                          parameter value.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    protected void apply(PathParameter annotation,
+    protected void apply(PathParam annotation,
                          String argument) throws Throwable {
         String name = annotation.name();
 
@@ -630,63 +626,59 @@ public class ProtocolRequestBuilder {
     }
 
     /**
-     * {@link PathParameter} method parameter {@link Annotation}
+     * {@link PathParam} method parameter {@link Annotation}
      *
-     * @param   annotation      The {@link PathParameter}
-     *                          {@link Annotation}.
+     * @param   annotation      The {@link PathParam} {@link Annotation}.
      * @param   argument        The {@link Object} representing the path
      *                          parameter value.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    protected void apply(PathParameter annotation,
+    protected void apply(PathParam annotation,
                          Object argument) throws Throwable {
         apply(annotation, String.valueOf(argument));
     }
 
     /**
-     * {@link QueryParameter} interface/method {@link Annotation}
+     * {@link QueryParam} interface/method {@link Annotation}
      *
-     * @param   annotation      The {@link QueryParameter}
-     *                          {@link Annotation}.
+     * @param   annotation      The {@link QueryParam} {@link Annotation}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    protected void apply(QueryParameter annotation) throws Throwable {
+    protected void apply(QueryParam annotation) throws Throwable {
         queryMap.put(annotation.name(), annotation.value());
     }
 
     /**
-     * {@link QueryParameters} interface/method {@link Annotation}
+     * {@link QueryParams} interface/method {@link Annotation}
      *
-     * @param   annotation      The {@link QueryParameters}
-     *                          {@link Annotation}.
+     * @param   annotation      The {@link QueryParams} {@link Annotation}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    protected void apply(QueryParameters annotation) throws Throwable {
+    protected void apply(QueryParams annotation) throws Throwable {
         if (annotation.value() != null) {
-            for (QueryParameter parameter : annotation.value()) {
+            for (QueryParam parameter : annotation.value()) {
                 apply(parameter);
             }
         }
     }
 
     /**
-     * {@link QueryParameter} method parameter {@link Annotation}
+     * {@link QueryParam} method parameter {@link Annotation}
      *
-     * @param   annotation      The {@link QueryParameter}
-     *                          {@link Annotation}.
+     * @param   annotation      The {@link QueryParam} {@link Annotation}.
      * @param   argument        The {@link String} representing the query
      *                          parameter value.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    protected void apply(QueryParameter annotation,
+    protected void apply(QueryParam annotation,
                          String argument) throws Throwable {
         String name = annotation.name();
 
@@ -702,17 +694,16 @@ public class ProtocolRequestBuilder {
     }
 
     /**
-     * {@link QueryParameter} method parameter {@link Annotation}
+     * {@link QueryParam} method parameter {@link Annotation}
      *
-     * @param   annotation      The {@link QueryParameter}
-     *                          {@link Annotation}.
+     * @param   annotation      The {@link QueryParam} {@link Annotation}.
      * @param   argument        The {@link Object} representing the query
      *                          parameter value.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    protected void apply(QueryParameter annotation,
+    protected void apply(QueryParam annotation,
                          Object argument) throws Throwable {
         if (argument != null) {
             apply(annotation, String.valueOf(argument));
@@ -720,30 +711,28 @@ public class ProtocolRequestBuilder {
     }
 
     /**
-     * {@link URIParameter} method parameter {@link Annotation}
+     * {@link URIParam} method parameter {@link Annotation}
      *
-     * @param   annotation      The {@link URIParameter}
-     *                          {@link Annotation}.
+     * @param   annotation      The {@link URIParam} {@link Annotation}.
      * @param   argument        The request {@link URI}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    protected void apply(URIParameter annotation, URI argument) throws Throwable {
+    protected void apply(URIParam annotation, URI argument) throws Throwable {
         uri = URIBuilderFactory.getDefault().getInstance(argument);
     }
 
     /**
-     * {@link URIParameter} method parameter {@link Annotation}
+     * {@link URIParam} method parameter {@link Annotation}
      *
-     * @param   annotation      The {@link URIParameter}
-     *                          {@link Annotation}.
+     * @param   annotation      The {@link URIParam} {@link Annotation}.
      * @param   argument        The request URI as a {@link String}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    protected void apply(URIParameter annotation,
+    protected void apply(URIParam annotation,
                          String argument) throws Throwable {
         uri = URIBuilderFactory.getDefault().getInstance(argument);
     }

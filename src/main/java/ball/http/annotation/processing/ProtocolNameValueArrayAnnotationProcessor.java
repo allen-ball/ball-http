@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017 Allen D. Ball.  All rights reserved.
+ * Copyright 2017, 2018 Allen D. Ball.  All rights reserved.
  */
 package ball.http.annotation.processing;
 
@@ -9,8 +9,8 @@ import ball.annotation.ServiceProviderFor;
 import ball.annotation.processing.AbstractAnnotationProcessor;
 import ball.annotation.processing.For;
 import ball.http.annotation.Headers;
-import ball.http.annotation.PathParameters;
-import ball.http.annotation.QueryParameters;
+import ball.http.annotation.PathParams;
+import ball.http.annotation.QueryParams;
 import java.util.List;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
@@ -30,7 +30,7 @@ import static javax.tools.Diagnostic.Kind.ERROR;
  * @version $Revision$
  */
 @ServiceProviderFor({ Processor.class })
-@For({ Headers.class, PathParameters.class, QueryParameters.class })
+@For({ Headers.class, PathParams.class, QueryParams.class })
 public class ProtocolNameValueArrayAnnotationProcessor
              extends AbstractAnnotationProcessor {
 

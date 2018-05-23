@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017 Allen D. Ball.  All rights reserved.
+ * Copyright 2017, 2018 Allen D. Ball.  All rights reserved.
  */
 package ball.http.annotation;
 
@@ -16,16 +16,17 @@ import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * {@link java.lang.annotation.Annotation} to an interface method parameter
- * as an URI path parameter.
+ * {@link java.lang.annotation.Annotation} to specify a "static" query
+ * parameter on an interface or method or to specify an interface method
+ * parameter as an URI query parameter.
  *
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$
  */
 @Documented
 @Retention(RUNTIME)
-@Target({ METHOD, TYPE, PARAMETER })
-public @interface PathParameter {
+@Target({ TYPE, METHOD, PARAMETER })
+public @interface QueryParam {
     String name() default NIL;
     String value() default NIL;
 }

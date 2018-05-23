@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017 Allen D. Ball.  All rights reserved.
+ * Copyright 2017, 2018 Allen D. Ball.  All rights reserved.
  */
 package ball.http.annotation;
 
@@ -14,7 +14,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
  * {@link java.lang.annotation.Annotation} to an interface method parameter
- * as an URI host parameter.
+ * as an URI parameter.
  *
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$
@@ -22,5 +22,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Documented
 @Retention(RUNTIME)
 @Target({ PARAMETER })
-public @interface HostParameter {
+public @interface URIParam {
 }
