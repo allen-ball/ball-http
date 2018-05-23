@@ -69,23 +69,42 @@ import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 import static org.apache.http.entity.ContentType.APPLICATION_XML;
 
 /**
+ * <p>
  * {@link HttpRequest} builder for {@link ProtocolClient#protocol()}.  See
  * the {@code apply(Annotation,...)} methods for the supported protocol
  * interface and method parameter {@link Annotation}s.
+ * </p>
  * <p>
  * Protocol API authors should consider designing protocol methods to throw
  * {@link org.apache.http.client.HttpResponseException},
  * {@link org.apache.http.client.ClientProtocolException}, and
  * {@link java.io.IOException}.
+ * </p>
+ * <p>
+ * Supported interface and method annotations:
  *
+ * {@include #INTERFACE_ANNOTATIONS}
+ * </p>
+ * <p>
+ * Supported method parameter annotations:
+ *
+ * {@include #PARAMETER_ANNOTATIONS}
+ * </p>
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$
  */
 public class ProtocolRequestBuilder {
     private static final String APPLY = "apply";
 
-    private static final Set<Class<? extends Annotation>> INTERFACE_ANNOTATIONS;
-    private static final Set<Class<? extends Annotation>> PARAMETER_ANNOTATIONS;
+    /**
+     * Supported interface and method annotations.
+     */
+    public static final Set<Class<? extends Annotation>> INTERFACE_ANNOTATIONS;
+
+    /**
+     * Supported method parameter annotations.
+     */
+    public static final Set<Class<? extends Annotation>> PARAMETER_ANNOTATIONS;
 
     static {
         TreeSet<Class<? extends Annotation>> interfaceAnnotationTypes =
@@ -730,6 +749,32 @@ public class ProtocolRequestBuilder {
     }
 
     /**
+     * {@link javax.ws.rs.Encoded} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.Encoded}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.Encoded annotation) throws Throwable {
+        throw new UnsupportedOperationException(annotation.toString());
+    }
+
+    /**
+     * {@link javax.ws.rs.Path} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.Path}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.Path annotation) throws Throwable {
+        appendURIPath(annotation.value());
+    }
+
+    /**
      * {@link javax.ws.rs.DELETE} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link javax.ws.rs.DELETE}
@@ -808,19 +853,6 @@ public class ProtocolRequestBuilder {
     }
 
     /**
-     * {@link javax.ws.rs.Path} method parameter {@link Annotation}
-     *
-     * @param   annotation      The {@link javax.ws.rs.Path}
-     *                          {@link Annotation}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(javax.ws.rs.Path annotation) throws Throwable {
-        appendURIPath(annotation.value());
-    }
-
-    /**
      * {@link javax.ws.rs.CookieParam} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link javax.ws.rs.CookieParam}
@@ -834,7 +866,7 @@ public class ProtocolRequestBuilder {
     protected void apply(javax.ws.rs.CookieParam annotation,
                          Object argument) throws Throwable {
         if (argument != null) {
-            throw new UnsupportedOperationException("@" + annotation.annotationType().getSimpleName());
+            throw new UnsupportedOperationException(annotation.toString());
         }
     }
 
@@ -872,6 +904,24 @@ public class ProtocolRequestBuilder {
                          Object argument) throws Throwable {
         if (argument != null) {
             request.setHeader(annotation.value(), String.valueOf(argument));
+        }
+    }
+
+    /**
+     * {@link javax.ws.rs.MatrixParam} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.MatrixParam}
+     *                          {@link Annotation}.
+     * @param   argument        The {@link Object} representing the matrix
+     *                          parameter value.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.MatrixParam annotation,
+                         Object argument) throws Throwable {
+        if (argument != null) {
+            throw new UnsupportedOperationException(annotation.toString());
         }
     }
 
