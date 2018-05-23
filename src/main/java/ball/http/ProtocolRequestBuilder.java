@@ -36,8 +36,10 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -45,13 +47,23 @@ import javax.xml.bind.JAXBException;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpRequest;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
+import org.apache.http.client.methods.HttpOptions;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.AbstractHttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
+import org.apache.http.message.BasicNameValuePair;
 
+import static ball.util.StringUtil.NIL;
 import static ball.util.StringUtil.isNil;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 import static org.apache.http.entity.ContentType.APPLICATION_XML;
@@ -119,8 +131,9 @@ public class ProtocolRequestBuilder {
 
     private final ProtocolClient<?> client;
     private transient URIBuilder uri = null;
-    private transient LinkedHashMap<String,String> pathMap = null;
-    private transient LinkedHashMap<String,String> queryMap = null;
+    private transient List<NameValuePair> formNVPList = new ArrayList<>();
+    private transient Map<String,String> pathMap = new LinkedHashMap<>();
+    private transient Map<String,String> queryMap = new LinkedHashMap<>();
     private transient HttpMessage request = null;
 
     /**
@@ -148,48 +161,63 @@ public class ProtocolRequestBuilder {
      * @throws  Throwable       If the call fails for any reason.
      */
     public HttpMessage build(Method method, Object[] argv) throws Throwable {
+        HttpMessage message = null;
+
         if (method.getDeclaringClass().equals(client.protocol())) {
-            uri = URIBuilderFactory.getDefault().getInstance();
-            pathMap = new LinkedHashMap<>();
-            queryMap = new LinkedHashMap<>();
-            request = null;
-            /*
-             * Process annotations.
-             */
-            process(method.getDeclaringClass().getAnnotations());
-            process(method.getAnnotations());
+            synchronized (this) {
+                uri = URIBuilderFactory.getDefault().getInstance();
+                formNVPList.clear();
+                pathMap.clear();
+                queryMap.clear();
+                request = null;
+                /*
+                 * Process annotations.
+                 */
+                process(method.getDeclaringClass().getAnnotations());
+                process(method.getAnnotations());
 
-            Annotation[][] annotations = method.getParameterAnnotations();
-            Class<?>[] types = method.getParameterTypes();
+                Annotation[][] annotations = method.getParameterAnnotations();
+                Class<?>[] types = method.getParameterTypes();
 
-            for (int i = 0; i < annotations.length; i += 1) {
-                if (HttpRequest.class.isAssignableFrom(types[i])) {
-                    request = (HttpRequest) argv[i];
+                for (int i = 0; i < annotations.length; i += 1) {
+                    if (HttpRequest.class.isAssignableFrom(types[i])) {
+                        request = (HttpRequest) argv[i];
+                    }
+
+                    process(annotations[i], types[i], argv[i]);
+                }
+                /*
+                 * Apply form parameters if specified.
+                 */
+                if (! formNVPList.isEmpty()) {
+                    ((HttpEntityEnclosingRequestBase) request)
+                        .setEntity(new UrlEncodedFormEntity(formNVPList,
+                                                            client.getCharset()));
+                }
+                /*
+                 * Apply URI path and query parameters and build the URI.
+                 */
+                for (Map.Entry<String,String> entry : pathMap.entrySet()) {
+                    uri.setPath(uri.getPath()
+                                .replaceAll("[{]" + entry.getKey() + "[}]",
+                                            entry.getValue()));
                 }
 
-                process(annotations[i], types[i], argv[i]);
-            }
-            /*
-             * Apply URI path and query parameters and build the URI.
-             */
-            for (Map.Entry<String,String> entry : pathMap.entrySet()) {
-                uri.setPath(uri.getPath()
-                            .replaceAll("[{]" + entry.getKey() + "[}]",
-                                        entry.getValue()));
-            }
+                for (Map.Entry<String,String> entry : queryMap.entrySet()) {
+                    uri.addParameter(entry.getKey(), entry.getValue());
+                }
 
-            for (Map.Entry<String,String> entry : queryMap.entrySet()) {
-                uri.addParameter(entry.getKey(), entry.getValue());
-            }
+                if (request instanceof HttpRequestBase) {
+                    ((HttpRequestBase) request).setURI(uri.build());
+                }
 
-            if (request instanceof HttpRequestBase) {
-                ((HttpRequestBase) request).setURI(uri.build());
+                message = request;
             }
         } else {
             throw new IllegalArgumentException(String.valueOf(method));
         }
 
-        return request;
+        return message;
     }
 
     private void process(Annotation[] annotations) throws Throwable {
@@ -241,6 +269,22 @@ public class ProtocolRequestBuilder {
         }
     }
 
+    private void appendURIPath(String string) {
+        if (! isNil(string)) {
+            String path = uri.getPath();
+
+            if (isNil(path)) {
+                path = "/";
+            }
+
+            if (! path.endsWith("/")) {
+                path += "/";
+            }
+
+            uri.setPath(path + string.replaceAll("^[/]+", NIL));
+        }
+    }
+
     /**
      * {@link URISpecification} interface/method {@link Annotation}
      *
@@ -279,9 +323,7 @@ public class ProtocolRequestBuilder {
         apply(annotation.annotationType()
               .getAnnotation(HttpMessageType.class));
 
-        if (! isNil(annotation.value())) {
-            uri.setPath(annotation.value());
-        }
+        appendURIPath(annotation.value());
     }
 
     /**
@@ -296,9 +338,7 @@ public class ProtocolRequestBuilder {
         apply(annotation.annotationType()
               .getAnnotation(HttpMessageType.class));
 
-        if (! isNil(annotation.value())) {
-            uri.setPath(annotation.value());
-        }
+        appendURIPath(annotation.value());
     }
 
     /**
@@ -313,9 +353,7 @@ public class ProtocolRequestBuilder {
         apply(annotation.annotationType()
               .getAnnotation(HttpMessageType.class));
 
-        if (! isNil(annotation.value())) {
-            uri.setPath(annotation.value());
-        }
+        appendURIPath(annotation.value());
     }
 
     /**
@@ -330,9 +368,7 @@ public class ProtocolRequestBuilder {
         apply(annotation.annotationType()
               .getAnnotation(HttpMessageType.class));
 
-        if (! isNil(annotation.value())) {
-            uri.setPath(annotation.value());
-        }
+        appendURIPath(annotation.value());
     }
 
     /**
@@ -347,9 +383,7 @@ public class ProtocolRequestBuilder {
         apply(annotation.annotationType()
               .getAnnotation(HttpMessageType.class));
 
-        if (! isNil(annotation.value())) {
-            uri.setPath(annotation.value());
-        }
+        appendURIPath(annotation.value());
     }
 
     /**
@@ -364,9 +398,7 @@ public class ProtocolRequestBuilder {
         apply(annotation.annotationType()
               .getAnnotation(HttpMessageType.class));
 
-        if (! isNil(annotation.value())) {
-            uri.setPath(annotation.value());
-        }
+        appendURIPath(annotation.value());
     }
 
     /**
@@ -381,9 +413,7 @@ public class ProtocolRequestBuilder {
         apply(annotation.annotationType()
               .getAnnotation(HttpMessageType.class));
 
-        if (! isNil(annotation.value())) {
-            uri.setPath(annotation.value());
-        }
+        appendURIPath(annotation.value());
     }
 
     /**
@@ -697,6 +727,192 @@ public class ProtocolRequestBuilder {
     protected void apply(URIParameter annotation,
                          String argument) throws Throwable {
         uri = URIBuilderFactory.getDefault().getInstance(argument);
+    }
+
+    /**
+     * {@link javax.ws.rs.DELETE} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.DELETE}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.DELETE annotation) throws Throwable {
+        request = new HttpDelete();
+    }
+
+    /**
+     * {@link javax.ws.rs.GET} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.GET}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.GET annotation) throws Throwable {
+        request = new HttpGet();
+    }
+
+    /**
+     * {@link javax.ws.rs.HEAD} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.HEAD}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.HEAD annotation) throws Throwable {
+        request = new HttpHead();
+    }
+
+    /**
+     * {@link javax.ws.rs.OPTIONS} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.OPTIONS}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.OPTIONS annotation) throws Throwable {
+        request = new HttpOptions();
+    }
+
+    /**
+     * {@link javax.ws.rs.POST} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.POST}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.POST annotation) throws Throwable {
+        request = new HttpPost();
+    }
+
+    /**
+     * {@link javax.ws.rs.PUT} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.PUT}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.PUT annotation) throws Throwable {
+        request = new HttpPut();
+    }
+
+    /**
+     * {@link javax.ws.rs.Path} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.Path}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.Path annotation) throws Throwable {
+        appendURIPath(annotation.value());
+    }
+
+    /**
+     * {@link javax.ws.rs.CookieParam} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.CookieParam}
+     *                          {@link Annotation}.
+     * @param   argument        The {@link Object} representing the cookie
+     *                          parameter value.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.CookieParam annotation,
+                         Object argument) throws Throwable {
+        if (argument != null) {
+            throw new UnsupportedOperationException("@" + annotation.annotationType().getSimpleName());
+        }
+    }
+
+    /**
+     * {@link javax.ws.rs.FormParam} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.FormParam}
+     *                          {@link Annotation}.
+     * @param   argument        The {@link Object} representing the form
+     *                          parameter value.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.FormParam annotation,
+                         Object argument) throws Throwable {
+        if (argument != null) {
+            formNVPList.add(new BasicNameValuePair(annotation.value(),
+                                                   String.valueOf(argument)));
+        }
+    }
+
+    /**
+     * {@link javax.ws.rs.HeaderParam} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.HeaderParam}
+     *                          {@link Annotation}.
+     * @param   argument        The {@link Object} representing the header
+     *                          parameter value.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.HeaderParam annotation,
+                         Object argument) throws Throwable {
+        if (argument != null) {
+            request.setHeader(annotation.value(), String.valueOf(argument));
+        }
+    }
+
+    /**
+     * {@link javax.ws.rs.PathParam} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.PathParam}
+     *                          {@link Annotation}.
+     * @param   argument        The {@link Object} representing the path
+     *                          parameter value.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.PathParam annotation,
+                         Object argument) throws Throwable {
+        if (argument != null) {
+            pathMap.put(annotation.value(), String.valueOf(argument));
+        } else {
+            pathMap.remove(annotation.value());
+        }
+    }
+
+    /**
+     * {@link javax.ws.rs.QueryParam} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link javax.ws.rs.QueryParam}
+     *                          {@link Annotation}.
+     * @param   argument        The {@link Object} representing the query
+     *                          parameter value.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(javax.ws.rs.QueryParam annotation,
+                         Object argument) throws Throwable {
+        if (argument != null) {
+            queryMap.put(annotation.value(), String.valueOf(argument));
+        } else {
+            queryMap.remove(annotation.value());
+        }
     }
 
     @Override

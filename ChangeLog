@@ -1,3 +1,8 @@
+2018-05-22  Allen D. Ball  <ball@sol.local>
+
+	* src/main/java/ball/http/ProtocolRequestBuilder.java:
+	Added support for javax.ws.rs annotations.
+
 2017-08-12  Allen D. Ball  <ball@sol>
 
 	* src/main/java/ball/http/ProtocolResponseHandler.java:
