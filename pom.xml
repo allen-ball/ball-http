@@ -16,7 +16,7 @@
   <name>Web API Client (HTTP) Utilities</name>
   <packaging>jar</packaging>
   <properties>
-    <jre.version>1.7</jre.version>
+    <jre.version>1.8</jre.version>
   </properties>
   <dependencies verbose="true">
     <dependency>
