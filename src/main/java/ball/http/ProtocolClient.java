@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017 Allen D. Ball.  All rights reserved.
+ * Copyright 2017, 2018 Allen D. Ball.  All rights reserved.
  */
 package ball.http;
 
@@ -26,6 +26,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpCoreContext;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Abstract {@link ProtocolClient} base class.
@@ -101,16 +103,9 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor,
             .addInterceptorLast((HttpRequestInterceptor) this)
             .addInterceptorLast((HttpResponseInterceptor) this)
             .build();
-
         this.context = (context != null) ? context : HttpCoreContext.create();
-
-        if (protocol != null) {
-            this.protocol = protocol;
-        } else {
-            throw new NullPointerException("protocol");
-        }
-
-        proxy =
+        this.protocol = requireNonNull(protocol, "protocol");
+        this.proxy =
             Proxy.newProxyInstance(protocol.getClassLoader(),
                                    new Class<?>[] { protocol },
                                    new ProtocolInvocationHandler(this));

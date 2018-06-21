@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017 Allen D. Ball.  All rights reserved.
+ * Copyright 2017, 2018 Allen D. Ball.  All rights reserved.
  */
 package ball.http;
 
@@ -27,6 +27,8 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.AbstractResponseHandler;
 import org.apache.http.util.EntityUtils;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * {@link ProtocolClient} {@link org.apache.http.client.ResponseHandler}
  * implementation.  Makes use of {@link ProtocolClient#getUnmarshaller()}
@@ -49,17 +51,8 @@ public class ProtocolResponseHandler extends AbstractResponseHandler<Object> {
                                       Method method) {
         super();
 
-        if (client != null) {
-            this.client = client;
-        } else {
-            throw new NullPointerException("client");
-        }
-
-        if (method != null) {
-            this.method = method;
-        } else {
-            throw new NullPointerException("method");
-        }
+        this.client = requireNonNull(client, "client");
+        this.method = requireNonNull(method, "method");
     }
 
     @Override

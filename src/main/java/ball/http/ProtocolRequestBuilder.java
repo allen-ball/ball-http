@@ -65,6 +65,7 @@ import org.apache.http.message.BasicNameValuePair;
 
 import static ball.util.StringUtil.NIL;
 import static ball.util.StringUtil.isNil;
+import static java.util.Objects.requireNonNull;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 import static org.apache.http.entity.ContentType.APPLICATION_XML;
 
@@ -161,11 +162,7 @@ public class ProtocolRequestBuilder {
      * @param   client          The {@link ProtocolClient}.
      */
     protected ProtocolRequestBuilder(ProtocolClient<?> client) {
-        if (client != null) {
-            this.client = client;
-        } else {
-            throw new NullPointerException("client");
-        }
+        this.client = requireNonNull(client, "client");
     }
 
     /**
@@ -989,11 +986,7 @@ public class ProtocolRequestBuilder {
         protected HttpEntityImpl(Object object) {
             super();
 
-            if (object != null) {
-                this.object = object;
-            } else {
-                throw new NullPointerException("object");
-            }
+            this.object = requireNonNull(object, "object");
 
             setChunked(false);
         }

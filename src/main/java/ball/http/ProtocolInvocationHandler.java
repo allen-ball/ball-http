@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017 Allen D. Ball.  All rights reserved.
+ * Copyright 2017, 2018 Allen D. Ball.  All rights reserved.
  */
 package ball.http;
 
@@ -11,6 +11,8 @@ import java.lang.reflect.Method;
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Protocol {@link InvocationHandler} for {@link ProtocolClient}.  The
@@ -38,13 +40,8 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      * @param   client          The {@link ProtocolClient}.
      */
     protected ProtocolInvocationHandler(ProtocolClient<?> client) {
-        if (client != null) {
-            this.client = client;
-        } else {
-            throw new NullPointerException("client");
-        }
-
-        builder = new ProtocolRequestBuilder(client);
+        this.client = requireNonNull(client, "client");
+        this.builder = new ProtocolRequestBuilder(client);
     }
 
     @Override
