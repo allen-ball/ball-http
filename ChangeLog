@@ -1,3 +1,9 @@
+2018-07-24  Allen D. Ball  <ball@sol.local>
+
+	* src/main/java/ball/http/ProtocolClient.java:
+	Expose Charset, JAXBContext, and ObjectMapper fields to
+	sublcasses.
+
 2018-05-23  Allen D. Ball  <ball@sol.local>
 
 	* Made ball.http.annotation.* annotation names consistent with

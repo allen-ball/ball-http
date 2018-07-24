@@ -70,11 +70,27 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor,
     private final HttpCoreContext context;
     private final Class<? extends P> protocol;
     private final Object proxy;
-    private transient Charset charset = null;
-    private transient JAXBContext jaxb = null;
+
+    /**
+     * Field exposed for subclass initialization;
+     * see {@link #getCharset()}.
+     */
+    protected transient Charset charset = null;
+
+    /**
+     * Field exposed for subclass initialization;
+     * see {@link #getJAXBContext()}.
+     */
+    protected transient JAXBContext jaxb = null;
+
+    /**
+     * Field exposed for subclass initialization;
+     * see {@link #getObjectMapper()}.
+     */
+    protected transient ObjectMapper mapper = null;
+
     private transient Marshaller marshaller = null;
     private transient Unmarshaller unmarshaller = null;
-    private transient ObjectMapper json = null;
 
     /**
      * Constructor that creates {@link HttpClientBuilder}
@@ -240,12 +256,12 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor,
      */
     public ObjectMapper getObjectMapper() {
         synchronized(this) {
-            if (json == null) {
-                json = new ObjectMapper();
+            if (mapper == null) {
+                mapper = new ObjectMapper();
             }
         }
 
-        return json;
+        return mapper;
     }
 
     @Override
