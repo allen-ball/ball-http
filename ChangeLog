@@ -1,3 +1,7 @@
+2018-07-31  Allen D. Ball  <ball@sol.local>
+
+	* pom.xml: Released version 1.0.0.
+
 2018-07-24  Allen D. Ball  <ball@sol.local>
 
 	* src/main/java/ball/http/ProtocolClient.java:
