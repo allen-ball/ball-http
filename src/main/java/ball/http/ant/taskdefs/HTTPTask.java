@@ -6,7 +6,6 @@
 package ball.http.ant.taskdefs;
 
 import ball.activation.ReaderWriterDataSource;
-import ball.io.IOUtil;
 import ball.swing.table.MapTableModel;
 import ball.util.BeanMap;
 import ball.util.MapUtil;
@@ -205,15 +204,12 @@ public abstract class HTTPTask extends AbstractClasspathTask
     protected void log(String type, HttpEntity entity) {
         if (entity != null) {
             if (entity.isRepeatable()) {
-                OutputStream out = null;
+                ReaderWriterDataSource ds =
+                    new ReaderWriterDataSource(null, type);
 
-                try {
-                    ReaderWriterDataSource ds =
-                        new ReaderWriterDataSource(null, type);
-
-                    out = ds.getOutputStream();
+                try (OutputStream out = ds.getOutputStream()) {
                     entity.writeTo(out);
-                    out.close();
+                    out.flush();
 
                     String string = ds.toString();
 
@@ -222,8 +218,6 @@ public abstract class HTTPTask extends AbstractClasspathTask
                         log(string);
                     }
                 } catch (IOException exception) {
-                } finally {
-                    IOUtil.close(out);
                 }
             } else {
                 log(String.valueOf(entity));
