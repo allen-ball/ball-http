@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2016, 2017 Allen D. Ball.  All rights reserved.
+ * Copyright 2016 - 2018 Allen D. Ball.  All rights reserved.
  */
 package ball.http.ant.taskdefs;
 
@@ -376,11 +376,7 @@ public abstract class HTTPTask extends AbstractClasspathTask
         public void execute() throws BuildException {
             super.execute();
 
-            CloseableHttpClient client = null;
-
-            try {
-                client = builder().build();
-
+            try (CloseableHttpClient client = builder().build()) {
                 HttpUriRequest request = request();
 
                 configure(request);
@@ -391,8 +387,6 @@ public abstract class HTTPTask extends AbstractClasspathTask
             } catch (Throwable throwable) {
                 throwable.printStackTrace();
                 throw new BuildException(throwable);
-            } finally {
-                IOUtil.close(client);
             }
         }
     }

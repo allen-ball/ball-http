@@ -26,7 +26,6 @@ import ball.http.annotation.QueryParam;
 import ball.http.annotation.QueryParams;
 import ball.http.annotation.URIParam;
 import ball.http.annotation.URISpecification;
-import ball.io.IOUtil;
 import ball.util.ClassOrder;
 import java.io.File;
 import java.io.IOException;
@@ -1001,13 +1000,9 @@ public class ProtocolRequestBuilder {
         public InputStream getContent() throws IOException,
                                                IllegalStateException {
             ByteArrayDataSource ds = new ByteArrayDataSource(null, null);
-            OutputStream out = null;
 
-            try {
-                out = ds.getOutputStream();
+            try (OutputStream out = ds.getOutputStream()) {
                 writeTo(out);
-            } finally {
-                IOUtil.close(out);
             }
 
             return ds.getInputStream();

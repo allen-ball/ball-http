@@ -5,7 +5,6 @@
  */
 package ball.http;
 
-import ball.io.IOUtil;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
@@ -91,13 +90,9 @@ public class ProtocolResponseHandler extends AbstractResponseHandler<Object> {
         TypeFactory factory = om.getTypeFactory();
         JavaType type =
             getJavaTypeFrom(factory, method.getGenericReturnType());
-        InputStream in = null;
 
-        try {
-            in = entity.getContent();
+        try (InputStream in = entity.getContent()) {
             object = om.readValue(in, type);
-        } finally {
-            IOUtil.close(in);
         }
 
         return object;
@@ -151,15 +146,11 @@ public class ProtocolResponseHandler extends AbstractResponseHandler<Object> {
     protected Object APPLICATION_XML(HttpEntity entity) throws ClientProtocolException,
                                                                IOException {
         Object object = null;
-        InputStream in = null;
 
-        try {
-            in = entity.getContent();
+        try (InputStream in = entity.getContent()) {
             object = client.getUnmarshaller().unmarshal(in);
         } catch (JAXBException exception) {
             throw new IOException(exception);
-        } finally {
-            IOUtil.close(in);
         }
 
         return object;
