@@ -8,10 +8,10 @@ package ball.http.ant.taskdefs;
 import ball.activation.ReaderWriterDataSource;
 import ball.swing.table.MapTableModel;
 import ball.util.BeanMap;
-import ball.util.MapUtil;
 import ball.util.PropertiesImpl;
 import ball.util.ant.taskdefs.AbstractClasspathTask;
 import ball.util.ant.taskdefs.AntTask;
+import ball.util.ant.taskdefs.ConfigurableAntTask;
 import ball.util.ant.types.StringAttributeType;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -61,7 +61,8 @@ import static org.apache.tools.ant.Project.toBoolean;
  * @version $Revision$
  */
 public abstract class HTTPTask extends AbstractClasspathTask
-                               implements HttpRequestInterceptor,
+                               implements ConfigurableAntTask,
+                                          HttpRequestInterceptor,
                                           HttpResponseInterceptor {
     private static final String DOT = ".";
 
@@ -79,16 +80,6 @@ public abstract class HTTPTask extends AbstractClasspathTask
     public boolean getBuffer() { return buffer; }
     public void setBuffer(boolean buffer) { this.buffer = buffer; }
     public void setBuffer(String string) { setBuffer(toBoolean(string)); }
-
-    @Override
-    public void init() throws BuildException {
-        super.init();
-
-        PropertiesImpl properties = new PropertiesImpl();
-
-        MapUtil.copy(getProject().getProperties(), properties);
-        properties.configure(this);
-    }
 
     /**
      * Method to allow subclasses to configure the
