@@ -79,7 +79,6 @@ public abstract class HTTPTask extends AbstractClasspathTask
 
     public boolean getBuffer() { return buffer; }
     public void setBuffer(boolean buffer) { this.buffer = buffer; }
-    public void setBuffer(String string) { setBuffer(toBoolean(string)); }
 
     /**
      * Method to allow subclasses to configure the
