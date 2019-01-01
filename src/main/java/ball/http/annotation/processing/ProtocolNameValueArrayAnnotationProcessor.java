@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017, 2018 Allen D. Ball.  All rights reserved.
+ * Copyright 2017 - 2019 Allen D. Ball.  All rights reserved.
  */
 package ball.http.annotation.processing;
 
@@ -20,8 +20,8 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 
 import static ball.util.MapUtil.getByKeyToString;
-import static ball.util.StringUtil.isNil;
 import static javax.tools.Diagnostic.Kind.ERROR;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
  * Name-value annotation {@link Processor}.
@@ -93,6 +93,6 @@ public class ProtocolNameValueArrayAnnotationProcessor
     }
 
     private boolean isSpecified(AnnotationValue value) {
-        return (value != null && (! isNil((String) value.getValue())));
+        return (value != null && (! isEmpty((String) value.getValue())));
     }
 }

@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017 Allen D. Ball.  All rights reserved.
+ * Copyright 2017 - 2019 Allen D. Ball.  All rights reserved.
  */
 package ball.http.annotation.processing;
 
@@ -27,7 +27,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
 import static ball.util.MapUtil.getByKeyToString;
-import static ball.util.StringUtil.isNil;
 import static javax.tools.Diagnostic.Kind.ERROR;
 
 /**

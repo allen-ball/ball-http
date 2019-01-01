@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2016 - 2018 Allen D. Ball.  All rights reserved.
+ * Copyright 2016 - 2019 Allen D. Ball.  All rights reserved.
  */
 package ball.http.ant.taskdefs;
 
@@ -47,8 +47,8 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.tools.ant.BuildException;
 
 import static ball.activation.ReaderWriterDataSource.CONTENT_TYPE;
-import static ball.util.StringUtil.NIL;
-import static ball.util.StringUtil.isNil;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.tools.ant.Project.toBoolean;
 
 /**
@@ -105,9 +105,9 @@ public abstract class HTTPTask extends AbstractClasspathTask
             }
         }
 
-        log(NIL);
+        log(EMPTY);
         log(context);
-        log(NIL);
+        log(EMPTY);
         log(request);
     }
 
@@ -124,9 +124,9 @@ public abstract class HTTPTask extends AbstractClasspathTask
             }
         }
 
-        log(NIL);
+        log(EMPTY);
         log(context);
-        log(NIL);
+        log(EMPTY);
         log(response);
     }
 
@@ -203,8 +203,8 @@ public abstract class HTTPTask extends AbstractClasspathTask
 
                     String string = ds.toString();
 
-                    if (! isNil(string)) {
-                        log(NIL);
+                    if (! isEmpty(string)) {
+                        log(EMPTY);
                         log(string);
                     }
                 } catch (IOException exception) {
@@ -255,7 +255,7 @@ public abstract class HTTPTask extends AbstractClasspathTask
         }
 
         public void addText(String text) {
-            setContent((isNil(getContent()) ? NIL : getContent()) + text);
+            setContent((isEmpty(getContent()) ? EMPTY : getContent()) + text);
         }
 
         public String getContent() { return content; }
@@ -300,7 +300,7 @@ public abstract class HTTPTask extends AbstractClasspathTask
                 Object key = entry.getKey();
                 String string = (key != null) ? key.toString() : null;
 
-                if ((! isNil(string)) && string.startsWith(prefix)) {
+                if ((! isEmpty(string)) && string.startsWith(prefix)) {
                     properties.put(string.substring(prefix.length()),
                                    entry.getValue());
                 }
@@ -333,9 +333,9 @@ public abstract class HTTPTask extends AbstractClasspathTask
                        .entrySet());
             addHeaders(request, headers);
 
-            if (! isNil(getContent())) {
+            if (! isEmpty(getContent())) {
                 setEntity(request, getContent());
-            } else if (! isNil(properties.getProperty("content"))) {
+            } else if (! isEmpty(properties.getProperty("content"))) {
                 setEntity(request, properties.getProperty("content"));
             }
         }
@@ -350,7 +350,7 @@ public abstract class HTTPTask extends AbstractClasspathTask
 
         private void setEntity(HttpUriRequest request,
                                String content) throws Exception {
-            if (! isNil(content)) {
+            if (! isEmpty(content)) {
                 ((HttpEntityEnclosingRequest) request)
                     .setEntity(new StringEntity(content));
             }

@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017, 2018 Allen D. Ball.  All rights reserved.
+ * Copyright 2017 - 2019 Allen D. Ball.  All rights reserved.
  */
 package ball.http.annotation;
 
@@ -10,7 +10,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import org.apache.http.HttpMessage;
 
-import static ball.util.StringUtil.NIL;
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;

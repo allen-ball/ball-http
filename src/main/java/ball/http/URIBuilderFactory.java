@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2016, 2017 Allen D. Ball.  All rights reserved.
+ * Copyright 2016 - 2019 Allen D. Ball.  All rights reserved.
  */
 package ball.http;
 
@@ -13,9 +13,8 @@ import java.beans.PropertyDescriptor;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
-
-import static ball.util.StringUtil.isNil;
 
 /**
  * {@link URIBuilder} {@link Factory}: Provides means to convert
@@ -57,26 +56,27 @@ public class URIBuilderFactory extends Factory<URIBuilder> {
         URIBuilder builder = null;
 
         try {
-            if (specification != null && (! isNil(specification.value()))) {
+            if (specification != null
+                && (! StringUtils.isEmpty(specification.value()))) {
                 builder = new URIBuilder(specification.value());
             } else {
                 builder = new URIBuilder();
             }
 
             if (specification != null) {
-                if (! isNil(specification.charset())) {
+                if (! StringUtils.isEmpty(specification.charset())) {
                     builder.setCharset(Charset.forName(specification.charset()));
                 }
 
-                if (! isNil(specification.scheme())) {
+                if (! StringUtils.isEmpty(specification.scheme())) {
                     builder.setScheme(specification.scheme());
                 }
 
-                if (! isNil(specification.userInfo())) {
+                if (! StringUtils.isEmpty(specification.userInfo())) {
                     builder.setUserInfo(specification.userInfo());
                 }
 
-                if (! isNil(specification.host())) {
+                if (! StringUtils.isEmpty(specification.host())) {
                     builder.setHost(specification.host());
                 }
 
@@ -84,7 +84,7 @@ public class URIBuilderFactory extends Factory<URIBuilder> {
                     builder.setPort(specification.port());
                 }
 
-                if (! isNil(specification.path())) {
+                if (! StringUtils.isEmpty(specification.path())) {
                     builder.setPath(specification.path());
                 }
             }

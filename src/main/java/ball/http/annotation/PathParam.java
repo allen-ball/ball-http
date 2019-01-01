@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017, 2018 Allen D. Ball.  All rights reserved.
+ * Copyright 2017 - 2019 Allen D. Ball.  All rights reserved.
  */
 package ball.http.annotation;
 
@@ -9,11 +9,11 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import static ball.util.StringUtil.NIL;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
  * {@link java.lang.annotation.Annotation} to an interface method parameter
@@ -26,6 +26,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Target({ METHOD, TYPE, PARAMETER })
 public @interface PathParam {
-    String name() default NIL;
-    String value() default NIL;
+    String name() default EMPTY;
+    String value() default EMPTY;
 }

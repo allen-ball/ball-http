@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017, 2018 Allen D. Ball.  All rights reserved.
+ * Copyright 2017 - 2019 Allen D. Ball.  All rights reserved.
  */
 package ball.http;
 
@@ -62,9 +62,9 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.message.BasicNameValuePair;
 
-import static ball.util.StringUtil.NIL;
-import static ball.util.StringUtil.isNil;
 import static java.util.Objects.requireNonNull;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 import static org.apache.http.entity.ContentType.APPLICATION_XML;
 
@@ -285,10 +285,10 @@ public class ProtocolRequestBuilder {
     }
 
     private void appendURIPath(String string) {
-        if (! isNil(string)) {
+        if (! isEmpty(string)) {
             String path = uri.getPath();
 
-            if (isNil(path)) {
+            if (isEmpty(path)) {
                 path = "/";
             }
 
@@ -296,7 +296,7 @@ public class ProtocolRequestBuilder {
                 path += "/";
             }
 
-            uri.setPath(path + string.replaceAll("^[/]+", NIL));
+            uri.setPath(path + string.replaceAll("^[/]+", EMPTY));
         }
     }
 
@@ -498,7 +498,7 @@ public class ProtocolRequestBuilder {
      */
     protected void apply(Entity annotation,
                          HttpEntity argument) throws Throwable {
-        if (! isNil(annotation.value())) {
+        if (! isEmpty(annotation.value())) {
             ((AbstractHttpEntity) argument)
                 .setContentType(ContentType
                                 .parse(annotation.value())
@@ -536,7 +536,7 @@ public class ProtocolRequestBuilder {
     protected void apply(Header annotation, String argument) throws Throwable {
         String name = annotation.name();
 
-        if (isNil(name)) {
+        if (isEmpty(name)) {
             name = annotation.value();
         }
 
@@ -614,7 +614,7 @@ public class ProtocolRequestBuilder {
                          String argument) throws Throwable {
         String name = annotation.name();
 
-        if (isNil(name)) {
+        if (isEmpty(name)) {
             name = annotation.value();
         }
 
@@ -678,7 +678,7 @@ public class ProtocolRequestBuilder {
                          String argument) throws Throwable {
         String name = annotation.name();
 
-        if (isNil(name)) {
+        if (isEmpty(name)) {
             name = annotation.value();
         }
 
