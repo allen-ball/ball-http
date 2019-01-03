@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017, 2018 Allen D. Ball.  All rights reserved.
+ * Copyright 2017 - 2019 Allen D. Ball.  All rights reserved.
  */
 package ball.http;
 
@@ -46,7 +46,7 @@ import static java.util.Objects.requireNonNull;
  *     A {@link Proxy} which implements the annotated protocol interface
  *   </li>
  *   <li value="4">
- *     {@code this} implements {@link HttpRequestInterceptor} and
+ *     {@link.this} implements {@link HttpRequestInterceptor} and
  *     and {@link HttpResponseInterceptor} which are configured into
  *     {@link HttpClientBuilder}; subclasses can override
  *     {@link #process(HttpRequest,HttpContext)} and
