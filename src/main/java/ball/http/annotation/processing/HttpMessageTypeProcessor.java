@@ -16,6 +16,8 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import static ball.util.MapUtil.getByKeyToString;
 import static javax.tools.Diagnostic.Kind.ERROR;
@@ -28,13 +30,8 @@ import static javax.tools.Diagnostic.Kind.ERROR;
  */
 @ServiceProviderFor({ Processor.class })
 @For({ HttpMessageType.class })
+@NoArgsConstructor @ToString
 public class HttpMessageTypeProcessor extends AbstractAnnotationProcessor {
-
-    /**
-     * Sole constructor.
-     */
-    public HttpMessageTypeProcessor() { super(); }
-
     @Override
     protected void process(RoundEnvironment env,
                            TypeElement annotation,

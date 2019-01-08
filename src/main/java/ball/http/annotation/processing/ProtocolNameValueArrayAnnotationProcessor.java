@@ -18,6 +18,8 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import static ball.util.MapUtil.getByKeyToString;
 import static javax.tools.Diagnostic.Kind.ERROR;
@@ -31,14 +33,9 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
  */
 @ServiceProviderFor({ Processor.class })
 @For({ Headers.class, PathParams.class, QueryParams.class })
+@NoArgsConstructor @ToString
 public class ProtocolNameValueArrayAnnotationProcessor
              extends AbstractAnnotationProcessor {
-
-    /**
-     * Sole constructor.
-     */
-    public ProtocolNameValueArrayAnnotationProcessor() { super(); }
-
     @Override
     protected void process(RoundEnvironment env,
                            TypeElement annotation,

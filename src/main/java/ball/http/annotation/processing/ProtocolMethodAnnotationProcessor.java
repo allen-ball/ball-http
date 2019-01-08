@@ -25,6 +25,8 @@ import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import static ball.util.MapUtil.getByKeyToString;
 import static javax.tools.Diagnostic.Kind.ERROR;
@@ -40,14 +42,9 @@ import static javax.tools.Diagnostic.Kind.ERROR;
         DELETE.class, GET.class, HEAD.class, OPTIONS.class,
             PATCH.class, POST.class, PUT.class
       })
+@NoArgsConstructor @ToString
 public class ProtocolMethodAnnotationProcessor
              extends AbstractAnnotationProcessor {
-
-    /**
-     * Sole constructor.
-     */
-    public ProtocolMethodAnnotationProcessor() { super(); }
-
     @Override
     public void process(RoundEnvironment roundEnv,
                         TypeElement annotation,

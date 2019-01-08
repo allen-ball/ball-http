@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017 Allen D. Ball.  All rights reserved.
+ * Copyright 2017 - 2019 Allen D. Ball.  All rights reserved.
  */
 package ball.http.annotation.processing;
 
@@ -14,6 +14,8 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.apache.http.entity.ContentType;
 
 import static ball.util.MapUtil.getByKeyToString;
@@ -28,14 +30,9 @@ import static javax.tools.Diagnostic.Kind.ERROR;
  */
 @ServiceProviderFor({ Processor.class })
 @For({ Entity.class })
+@NoArgsConstructor @ToString
 public class EntityProcessor
              extends ProtocolMethodParameterAnnotationProcessor {
-
-    /**
-     * Sole constructor.
-     */
-    public EntityProcessor() { super(); }
-
     @Override
     public void process(RoundEnvironment roundEnv,
                         TypeElement annotation,
