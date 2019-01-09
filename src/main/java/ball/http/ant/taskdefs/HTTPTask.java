@@ -20,6 +20,10 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -47,6 +51,7 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.tools.ant.BuildException;
 
 import static ball.activation.ReaderWriterDataSource.CONTENT_TYPE;
+import static lombok.AccessLevel.PROTECTED;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.tools.ant.Project.toBoolean;
@@ -60,25 +65,20 @@ import static org.apache.tools.ant.Project.toBoolean;
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$
  */
+@NoArgsConstructor(access = PROTECTED)
 public abstract class HTTPTask extends AbstractClasspathTask
                                implements ConfigurableAntTask,
                                           HttpRequestInterceptor,
                                           HttpResponseInterceptor {
     private static final String DOT = ".";
 
-    private boolean buffer = false;
     private final HttpClientBuilder builder =
         HttpClientBuilder.create()
         .addInterceptorLast((HttpRequestInterceptor) this)
         .addInterceptorLast((HttpResponseInterceptor) this);
 
-    /**
-     * Sole constructor.
-     */
-    protected HTTPTask() { super(); }
-
-    public boolean getBuffer() { return buffer; }
-    public void setBuffer(boolean buffer) { this.buffer = buffer; }
+    @Getter @Setter
+    private boolean buffer = false;
 
     /**
      * Method to allow subclasses to configure the
@@ -97,7 +97,7 @@ public abstract class HTTPTask extends AbstractClasspathTask
 
             if (entity != null) {
                 if (! entity.isRepeatable()) {
-                    if (getBuffer()) {
+                    if (isBuffer()) {
                         ((HttpEntityEnclosingRequest) request)
                             .setEntity(new BufferedHttpEntity(entity));
                     }
@@ -118,7 +118,7 @@ public abstract class HTTPTask extends AbstractClasspathTask
 
         if (entity != null) {
             if (! entity.isRepeatable()) {
-                if (getBuffer()) {
+                if (isBuffer()) {
                     response.setEntity(new BufferedHttpEntity(entity));
                 }
             }
@@ -222,13 +222,14 @@ public abstract class HTTPTask extends AbstractClasspathTask
      *
      * {@bean.info}
      */
+    @NoArgsConstructor(access = PROTECTED)
     protected static abstract class Request extends HTTPTask {
         private PropertiesImpl properties = null;
         private URIBuilder builder = new URIBuilder();
         private final List<NameValuePairImpl> headers = new ArrayList<>();
-        private String content = null;
 
-        protected Request() { super(); }
+        @Getter @Setter
+        private String content = null;
 
         public void setURI(String string) throws URISyntaxException {
             builder = new URIBuilder(string);
@@ -257,9 +258,6 @@ public abstract class HTTPTask extends AbstractClasspathTask
         public void addText(String text) {
             setContent((isEmpty(getContent()) ? EMPTY : getContent()) + text);
         }
-
-        public String getContent() { return content; }
-        public void setContent(String content) { this.content = content; }
 
         @Override
         public void init() throws BuildException {
@@ -382,13 +380,8 @@ public abstract class HTTPTask extends AbstractClasspathTask
      * {@bean.info}
      */
     @AntTask("http-delete")
+    @NoArgsConstructor @ToString
     public static class Delete extends Request {
-
-        /**
-         * Sole constructor.
-         */
-        public Delete() { super(); }
-
         @Override
         protected HttpUriRequest request() { return new HttpDelete(); }
     }
@@ -400,13 +393,8 @@ public abstract class HTTPTask extends AbstractClasspathTask
      * {@bean.info}
      */
     @AntTask("http-get")
+    @NoArgsConstructor @ToString
     public static class Get extends Request {
-
-        /**
-         * Sole constructor.
-         */
-        public Get() { super(); }
-
         @Override
         protected HttpUriRequest request() { return new HttpGet(); }
     }
@@ -418,13 +406,8 @@ public abstract class HTTPTask extends AbstractClasspathTask
      * {@bean.info}
      */
     @AntTask("http-head")
+    @NoArgsConstructor @ToString
     public static class Head extends Request {
-
-        /**
-         * Sole constructor.
-         */
-        public Head() { super(); }
-
         @Override
         protected HttpUriRequest request() { return new HttpHead(); }
     }
@@ -436,13 +419,8 @@ public abstract class HTTPTask extends AbstractClasspathTask
      * {@bean.info}
      */
     @AntTask("http-options")
+    @NoArgsConstructor @ToString
     public static class Options extends Request {
-
-        /**
-         * Sole constructor.
-         */
-        public Options() { super(); }
-
         @Override
         protected HttpUriRequest request() { return new HttpOptions(); }
     }
@@ -454,13 +432,8 @@ public abstract class HTTPTask extends AbstractClasspathTask
      * {@bean.info}
      */
     @AntTask("http-patch")
+    @NoArgsConstructor @ToString
     public static class Patch extends Request {
-
-        /**
-         * Sole constructor.
-         */
-        public Patch() { super(); }
-
         @Override
         protected HttpUriRequest request() { return new HttpPatch(); }
     }
@@ -472,13 +445,8 @@ public abstract class HTTPTask extends AbstractClasspathTask
      * {@bean.info}
      */
     @AntTask("http-post")
+    @NoArgsConstructor @ToString
     public static class Post extends Request {
-
-        /**
-         * Sole constructor.
-         */
-        public Post() { super(); }
-
         @Override
         protected HttpUriRequest request() { return new HttpPost(); }
     }
@@ -490,13 +458,8 @@ public abstract class HTTPTask extends AbstractClasspathTask
      * {@bean.info}
      */
     @AntTask("http-put")
+    @NoArgsConstructor @ToString
     public static class Put extends Request {
-
-        /**
-         * Sole constructor.
-         */
-        public Put() { super(); }
-
         @Override
         protected HttpUriRequest request() { return new HttpPut(); }
     }
@@ -505,11 +468,8 @@ public abstract class HTTPTask extends AbstractClasspathTask
      * {@link StringAttributeType} implementation that includes
      * {@link NameValuePair}.
      */
+    @NoArgsConstructor @ToString
     public static class NameValuePairImpl extends StringAttributeType
                                           implements NameValuePair {
-        /**
-         * Sole constructor.
-         */
-        public NameValuePairImpl() { super(); }
     }
 }
