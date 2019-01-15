@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns:aether="antlib:org.eclipse.aether.ant"
+         xmlns:util="antlib:ball.util.ant"
          name="ball.http" basedir="." default="jar">
   <description>
     ball.http
