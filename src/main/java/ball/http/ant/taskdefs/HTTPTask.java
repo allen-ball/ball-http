@@ -9,8 +9,9 @@ import ball.activation.ReaderWriterDataSource;
 import ball.swing.table.MapTableModel;
 import ball.util.BeanMap;
 import ball.util.PropertiesImpl;
-import ball.util.ant.taskdefs.AbstractClasspathTask;
+import ball.util.ant.taskdefs.AnnotatedAntTask;
 import ball.util.ant.taskdefs.AntTask;
+import ball.util.ant.taskdefs.ClasspathDelegateAntTask;
 import ball.util.ant.taskdefs.ConfigurableAntTask;
 import ball.util.ant.types.StringAttributeType;
 import java.io.IOException;
@@ -24,6 +25,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.Accessors;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -49,6 +51,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
 import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.Task;
+import org.apache.tools.ant.util.ClasspathUtils;
 
 import static ball.activation.ReaderWriterDataSource.CONTENT_TYPE;
 import static lombok.AccessLevel.PROTECTED;
@@ -57,8 +61,8 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.tools.ant.Project.toBoolean;
 
 /**
- * Abstract {@link.uri http://ant.apache.org/ Ant} base
- * {@link org.apache.tools.ant.Task} for web API client tasks.
+ * Abstract {@link.uri http://ant.apache.org/ Ant} base {@link Task} for web
+ * API client tasks.
  *
  * {@bean.info}
  *
@@ -66,8 +70,10 @@ import static org.apache.tools.ant.Project.toBoolean;
  * @version $Revision$
  */
 @NoArgsConstructor(access = PROTECTED)
-public abstract class HTTPTask extends AbstractClasspathTask
-                               implements ConfigurableAntTask,
+public abstract class HTTPTask extends Task
+                               implements AnnotatedAntTask,
+                                          ClasspathDelegateAntTask,
+                                          ConfigurableAntTask,
                                           HttpRequestInterceptor,
                                           HttpResponseInterceptor {
     private static final String DOT = ".";
@@ -77,8 +83,23 @@ public abstract class HTTPTask extends AbstractClasspathTask
         .addInterceptorLast((HttpRequestInterceptor) this)
         .addInterceptorLast((HttpResponseInterceptor) this);
 
+    @Getter @Setter @Accessors(chain = true, fluent = true)
+    private ClasspathUtils.Delegate delegate = null;
     @Getter @Setter
     private boolean buffer = false;
+
+    @Override
+    public void init() throws BuildException {
+        super.init();
+        ClasspathDelegateAntTask.super.init();
+        ConfigurableAntTask.super.init();
+    }
+
+    @Override
+    public void execute() throws BuildException {
+        super.execute();
+        AnnotatedAntTask.super.execute();
+    }
 
     /**
      * Method to allow subclasses to configure the
