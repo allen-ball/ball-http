@@ -1,5 +1,8 @@
 2019-01-31  Allen D. Ball  <ball@sol.local>
 
+	* src/main/java/ball/http/ProtocolInvocationHandler.java:
+	Support interface default methods.
+
 	* Start development of 2.0-SNAPSHOT.
 
 2018-07-31  Allen D. Ball  <ball@sol.local>

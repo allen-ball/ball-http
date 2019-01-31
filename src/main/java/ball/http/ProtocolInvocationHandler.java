@@ -1,11 +1,12 @@
 /*
  * $Id$
  *
- * Copyright 2017, 2018 Allen D. Ball.  All rights reserved.
+ * Copyright 2017 - 2019 Allen D. Ball.  All rights reserved.
  */
 package ball.http;
 
 import ball.util.ClassOrder;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import org.apache.http.HttpMessage;
@@ -48,22 +49,34 @@ public class ProtocolInvocationHandler implements InvocationHandler {
     public Object invoke(Object proxy,
                          Method method, Object[] argv) throws Throwable {
         Object result = null;
-        Class<?> returnType = method.getReturnType();
-        HttpMessage request = builder.build(method, argv);
 
-        if (returnType.isAssignableFrom(request.getClass())) {
-            result = returnType.cast(request);
+        if (method.isDefault()) {
+            Class<?> declarer = method.getDeclaringClass();
+
+            result =
+                MethodHandles.lookup()
+                .in(declarer)
+                .unreflectSpecial(method, declarer)
+                .bindTo(proxy)
+                .invokeWithArguments(argv);
         } else {
-            if (returnType.isAssignableFrom(HttpResponse.class)) {
-                result =
-                    client.client()
-                    .execute((HttpUriRequest) request, client.context());
+            Class<?> returnType = method.getReturnType();
+            HttpMessage request = builder.build(method, argv);
+
+            if (returnType.isAssignableFrom(request.getClass())) {
+                result = returnType.cast(request);
             } else {
-                result =
-                    client.client()
-                    .execute((HttpUriRequest) request,
-                             new ProtocolResponseHandler(client, method),
-                             client.context());
+                if (returnType.isAssignableFrom(HttpResponse.class)) {
+                    result =
+                        client.client()
+                        .execute((HttpUriRequest) request, client.context());
+                } else {
+                    result =
+                        client.client()
+                        .execute((HttpUriRequest) request,
+                                 new ProtocolResponseHandler(client, method),
+                                 client.context());
+                }
             }
         }
 
