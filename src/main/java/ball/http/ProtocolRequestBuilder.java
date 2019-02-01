@@ -8,7 +8,6 @@ package ball.http;
 import ball.activation.ByteArrayDataSource;
 import ball.http.annotation.Entity;
 import ball.http.annotation.HostParam;
-import ball.http.annotation.JAXB;
 import ball.http.annotation.JSON;
 import ball.http.annotation.URIParam;
 import ball.http.annotation.URISpecification;
@@ -45,7 +44,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.xml.bind.JAXBException;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpRequest;
@@ -69,8 +67,6 @@ import org.apache.http.message.BasicNameValuePair;
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static org.apache.http.entity.ContentType.APPLICATION_JSON;
-import static org.apache.http.entity.ContentType.APPLICATION_XML;
 
 /**
  * <p>
@@ -366,20 +362,6 @@ public class ProtocolRequestBuilder {
     protected void apply(HostParam annotation,
                          String argument) throws Throwable {
         uri.setHost(argument);
-    }
-
-    /**
-     * {@link JAXB} method parameter {@link Annotation}
-     *
-     * @param   annotation      The {@link JAXB} {@link Annotation}.
-     * @param   argument        The {@link Object} to marshal.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(JAXB annotation, Object argument) throws Throwable {
-        ((HttpEntityEnclosingRequestBase) request)
-            .setEntity(new JAXBHttpEntity(argument));
     }
 
     /**
@@ -696,25 +678,6 @@ public class ProtocolRequestBuilder {
 
         @Override
         public boolean isStreaming() { return false; }
-    }
-
-    private class JAXBHttpEntity extends HttpEntityImpl {
-        public JAXBHttpEntity(Object object) {
-            super(object);
-
-            setContentType(ContentType.APPLICATION_XML
-                           .withCharset(client.getCharset())
-                           .toString());
-        }
-
-        @Override
-        public void writeTo(OutputStream out) throws IOException {
-            try {
-                client.getMarshaller().marshal(object, out);
-            } catch (JAXBException exception) {
-                throw new IOException(exception);
-            }
-        }
     }
 
     private class JSONHttpEntity extends HttpEntityImpl {
