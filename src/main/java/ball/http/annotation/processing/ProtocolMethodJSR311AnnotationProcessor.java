@@ -8,13 +8,6 @@ package ball.http.annotation.processing;
 import ball.annotation.ServiceProviderFor;
 import ball.annotation.processing.AbstractAnnotationProcessor;
 import ball.annotation.processing.For;
-import ball.http.annotation.DELETE;
-import ball.http.annotation.GET;
-import ball.http.annotation.HEAD;
-import ball.http.annotation.OPTIONS;
-import ball.http.annotation.PATCH;
-import ball.http.annotation.POST;
-import ball.http.annotation.PUT;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -25,6 +18,13 @@ import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.HEAD;
+import javax.ws.rs.OPTIONS;
+import javax.ws.rs.PATCH;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
@@ -32,7 +32,8 @@ import static ball.util.MapUtil.getByKeyToString;
 import static javax.tools.Diagnostic.Kind.ERROR;
 
 /**
- * HTTP Message {@link Annotation} {@link Processor}
+ * {@link javax.ws.rs JSR 311} {@link Annotation} {@link Processor} for
+ * client interfaces.
  *
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$
@@ -43,7 +44,7 @@ import static javax.tools.Diagnostic.Kind.ERROR;
             PATCH.class, POST.class, PUT.class
       })
 @NoArgsConstructor @ToString
-public class ProtocolMethodAnnotationProcessor
+public class ProtocolMethodJSR311AnnotationProcessor
              extends AbstractAnnotationProcessor {
     @Override
     public void process(RoundEnvironment roundEnv,

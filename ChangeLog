@@ -1,5 +1,7 @@
 2019-01-31  Allen D. Ball  <ball@sol.local>
 
+	* Removed custom annotations that have a javax.ws.rs counterpart.
+
 	* src/main/java/ball/http/ProtocolInvocationHandler.java:
 	Support interface default methods.
 
