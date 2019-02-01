@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2017 Allen D. Ball.  All rights reserved.
+ * Copyright 2017 - 2019 Allen D. Ball.  All rights reserved.
  */
 package ball.http.annotation.processing;
 
@@ -10,8 +10,10 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import lombok.NoArgsConstructor;
 
 import static javax.tools.Diagnostic.Kind.ERROR;
+import static lombok.AccessLevel.PROTECTED;
 
 /**
  * Abstract HTTP Message parameter {@link java.lang.annotation.Annotation}
@@ -20,14 +22,9 @@ import static javax.tools.Diagnostic.Kind.ERROR;
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$
  */
+@NoArgsConstructor(access = PROTECTED)
 public abstract class ProtocolMethodParameterAnnotationProcessor
                       extends AbstractAnnotationProcessor {
-
-    /**
-     * Sole constructor.
-     */
-    protected ProtocolMethodParameterAnnotationProcessor() { super(); }
-
     @Override
     public void process(RoundEnvironment roundEnv,
                         TypeElement annotation,
