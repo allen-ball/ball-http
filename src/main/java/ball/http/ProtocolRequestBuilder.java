@@ -8,7 +8,6 @@ package ball.http;
 import ball.activation.ByteArrayDataSource;
 import ball.http.annotation.Entity;
 import ball.http.annotation.HostParam;
-import ball.http.annotation.HttpMessageType;
 import ball.http.annotation.JAXB;
 import ball.http.annotation.JSON;
 import ball.http.annotation.URIParam;
@@ -316,19 +315,6 @@ public class ProtocolRequestBuilder {
      */
     protected void apply(URISpecification annotation) throws Throwable {
         uri = URIBuilderFactory.getDefault().getInstance(annotation);
-    }
-
-    /**
-     * {@link HttpMessageType} interface/method {@link Annotation}
-     *
-     * @param   annotation      The {@link HttpMessageType}
-     *                          {@link Annotation}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(HttpMessageType annotation) throws Throwable {
-        request = annotation.value().getConstructor().newInstance();
     }
 
     /**
