@@ -158,11 +158,6 @@ public class ProtocolRequestBuilder {
         HttpMessage message = null;
 
         if (method.getDeclaringClass().equals(client.protocol())) {
-            method =
-                client.protocol()
-                .getDeclaredMethod(method.getName(),
-                                   method.getParameterTypes());
-
             synchronized (this) {
                 uri = URIBuilderFactory.getDefault().getInstance();
                 formNVPList.clear();
