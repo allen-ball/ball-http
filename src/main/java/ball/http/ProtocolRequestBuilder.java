@@ -19,14 +19,16 @@ import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.stream.Collectors;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.CookieParam;
 import javax.ws.rs.DELETE;
@@ -44,6 +46,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import org.apache.commons.lang3.ClassUtils;
+import org.apache.commons.lang3.reflect.MethodUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpRequest;
@@ -66,7 +70,8 @@ import org.apache.http.message.BasicNameValuePair;
 
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * <p>
@@ -99,54 +104,28 @@ public class ProtocolRequestBuilder {
     /**
      * Supported interface and method annotations.
      */
-    public static final Set<Class<? extends Annotation>> INTERFACE_ANNOTATIONS;
+    public static final Set<Class<? extends Annotation>> INTERFACE_ANNOTATIONS =
+        Arrays.stream(ProtocolRequestBuilder.class.getDeclaredMethods())
+        .filter(t -> t.getName().equals(APPLY))
+        .filter(t -> t.getParameterCount() > 0)
+        .filter(t -> Annotation.class.isAssignableFrom(t.getParameterTypes()[0]))
+        .filter(t -> ClassUtils.isAssignable(new Class<?>[] { t.getParameterTypes()[0] },
+                                             t.getParameterTypes()))
+        .map(t -> t.getParameterTypes()[0].asSubclass(Annotation.class))
+        .collect(Collectors.toSet());
 
     /**
      * Supported method parameter annotations.
      */
-    public static final Set<Class<? extends Annotation>> PARAMETER_ANNOTATIONS;
-
-    static {
-        TreeSet<Class<? extends Annotation>> interfaceAnnotationTypes =
-            new TreeSet<>(ClassOrder.NAME);
-        TreeSet<Class<? extends Annotation>> parameterAnnotationTypes =
-            new TreeSet<>(ClassOrder.NAME);
-
-        for (Method method :
-                 ProtocolRequestBuilder.class.getDeclaredMethods()) {
-            String name = method.getName();
-            Class<?>[] types = method.getParameterTypes();
-            /*
-             * apply(Annotation, ...)
-             */
-            if (name.equals(APPLY)) {
-                if (types.length > 0) {
-                    if (Annotation.class.isAssignableFrom(types[0])) {
-                        Class<? extends Annotation> type =
-                            types[0].asSubclass(Annotation.class);
-
-                        switch (types.length) {
-                        case 1:
-                            interfaceAnnotationTypes.add(type);
-                            break;
-
-                        case 2:
-                            parameterAnnotationTypes.add(type);
-                            break;
-
-                        default:
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        INTERFACE_ANNOTATIONS =
-            Collections.unmodifiableSet(interfaceAnnotationTypes);
-        PARAMETER_ANNOTATIONS =
-            Collections.unmodifiableSet(parameterAnnotationTypes);
-    }
+    public static final Set<Class<? extends Annotation>> PARAMETER_ANNOTATIONS =
+        Arrays.stream(ProtocolRequestBuilder.class.getDeclaredMethods())
+        .filter(t -> t.getName().equals(APPLY))
+        .filter(t -> t.getParameterCount() > 0)
+        .filter(t -> Annotation.class.isAssignableFrom(t.getParameterTypes()[0]))
+        .filter(t -> ClassUtils.isAssignable(new Class<?>[] { t.getParameterTypes()[0], Parameter.class, null },
+                                             t.getParameterTypes()))
+        .map(t -> t.getParameterTypes()[0].asSubclass(Annotation.class))
+        .collect(Collectors.toSet());
 
     private final ProtocolClient<?> client;
     private transient URIBuilder uri = null;
@@ -179,6 +158,11 @@ public class ProtocolRequestBuilder {
         HttpMessage message = null;
 
         if (method.getDeclaringClass().equals(client.protocol())) {
+            method =
+                client.protocol()
+                .getDeclaredMethod(method.getName(),
+                                   method.getParameterTypes());
+
             synchronized (this) {
                 uri = URIBuilderFactory.getDefault().getInstance();
                 formNVPList.clear();
@@ -191,15 +175,16 @@ public class ProtocolRequestBuilder {
                 process(method.getDeclaringClass().getAnnotations());
                 process(method.getAnnotations());
 
-                Annotation[][] annotations = method.getParameterAnnotations();
-                Class<?>[] types = method.getParameterTypes();
+                Parameter[] parameters = method.getParameters();
 
-                for (int i = 0; i < annotations.length; i += 1) {
-                    if (HttpRequest.class.isAssignableFrom(types[i])) {
+                for (int i = 0; i < parameters.length; i += 1) {
+                    Class<?> type = parameters[i].getType();
+
+                    if (HttpRequest.class.isAssignableFrom(type)) {
                         request = (HttpRequest) argv[i];
                     }
 
-                    process(annotations[i], types[i], argv[i]);
+                    process(parameters[i], argv[i]);
                 }
                 /*
                  * Apply form parameters if specified.
@@ -244,9 +229,10 @@ public class ProtocolRequestBuilder {
     private void process(Annotation annotation) throws Throwable {
         try {
             if (INTERFACE_ANNOTATIONS.contains(annotation.annotationType())) {
-                getClass()
-                    .getDeclaredMethod(APPLY, annotation.annotationType())
-                    .invoke(this, annotation);
+                MethodUtils.invokeMethod(this, true,
+                                         APPLY,
+                                         new Object[] { annotation },
+                                         new Class<?>[] { annotation.annotationType() });
             }
         } catch (NoSuchMethodException exception) {
             throw new IllegalStateException(exception);
@@ -256,28 +242,35 @@ public class ProtocolRequestBuilder {
         }
     }
 
-    private void process(Annotation[] annotations,
-                         Class<?> type, Object argument) throws Throwable {
+    private void process(Parameter parameter,
+                         Object argument) throws Throwable {
+        Annotation[] annotations = parameter.getAnnotations();
+
         for (int i = 0; i < annotations.length; i += 1) {
-            process(annotations[i], type, argument);
+            process(annotations[i], parameter, argument);
         }
     }
 
     private void process(Annotation annotation,
-                         Class<?> type, Object argument) throws Throwable {
+                         Parameter parameter,
+                         Object argument) throws Throwable {
         try {
             if (PARAMETER_ANNOTATIONS.contains(annotation.annotationType())) {
-                getClass()
-                    .getDeclaredMethod(APPLY,
-                                       annotation.annotationType(), type)
-                    .invoke(this, annotation, argument);
+                MethodUtils.invokeMethod(this, true,
+                                         APPLY,
+                                         new Object[] {
+                                             annotation,
+                                             parameter,
+                                             argument
+                                         },
+                                         new Class<?>[] {
+                                             annotation.annotationType(),
+                                             Parameter.class,
+                                             (argument != null) ? argument.getClass() : parameter.getType()
+                                         });
             }
         } catch (NoSuchMethodException exception) {
-            if (! Object.class.equals(type)) {
-                process(annotation, Object.class, argument);
-            } else {
-                throw new IllegalStateException(exception);
-            }
+            throw new IllegalStateException(exception);
         } catch (IllegalAccessException exception) {
         } catch (InvocationTargetException exception) {
             throw exception.getTargetException();
@@ -285,10 +278,10 @@ public class ProtocolRequestBuilder {
     }
 
     private void appendURIPath(String string) {
-        if (! isEmpty(string)) {
+        if (isNotBlank(string)) {
             String path = uri.getPath();
 
-            if (isEmpty(path)) {
+            if (isBlank(path)) {
                 path = "/";
             }
 
@@ -317,14 +310,16 @@ public class ProtocolRequestBuilder {
      * {@link Entity} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link Entity} {@link Annotation}.
+     * @param   parameter       The {@link Method} {@link Parameter}.
      * @param   argument        The {@link HttpEntity}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
     protected void apply(Entity annotation,
+                         Parameter parameter,
                          HttpEntity argument) throws Throwable {
-        if (! isEmpty(annotation.value())) {
+        if (isNotBlank(annotation.value())) {
             ((AbstractHttpEntity) argument)
                 .setContentType(ContentType
                                 .parse(annotation.value())
@@ -339,20 +334,24 @@ public class ProtocolRequestBuilder {
      * {@link Entity} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link Entity} {@link Annotation}.
+     * @param   parameter       The {@link Method} {@link Parameter}.
      * @param   argument        The {@link File} representing the
      *                          {@link HttpEntity}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    protected void apply(Entity annotation, File argument) throws Throwable {
-        apply(annotation, new FileEntity(argument));
+    protected void apply(Entity annotation,
+                         Parameter parameter,
+                         File argument) throws Throwable {
+        apply(annotation, parameter, new FileEntity(argument));
     }
 
     /**
      * {@link HostParam} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link HostParam} {@link Annotation}.
+     * @param   parameter       The {@link Method} {@link Parameter}.
      * @param   argument        The {@link String} representing the host
      *                          parameter value.
      *
@@ -360,6 +359,7 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void apply(HostParam annotation,
+                         Parameter parameter,
                          String argument) throws Throwable {
         uri.setHost(argument);
     }
@@ -368,12 +368,15 @@ public class ProtocolRequestBuilder {
      * {@link JSON} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link JSON} {@link Annotation}.
+     * @param   parameter       The {@link Method} {@link Parameter}.
      * @param   argument        The {@link Object} to map.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    protected void apply(JSON annotation, Object argument) throws Throwable {
+    protected void apply(JSON annotation,
+                         Parameter parameter,
+                         Object argument) throws Throwable {
         ((HttpEntityEnclosingRequestBase) request)
             .setEntity(new JSONHttpEntity(argument));
     }
@@ -382,12 +385,15 @@ public class ProtocolRequestBuilder {
      * {@link URIParam} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link URIParam} {@link Annotation}.
+     * @param   parameter       The {@link Method} {@link Parameter}.
      * @param   argument        The request {@link URI}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
-    protected void apply(URIParam annotation, URI argument) throws Throwable {
+    protected void apply(URIParam annotation,
+                         Parameter parameter,
+                         URI argument) throws Throwable {
         uri = URIBuilderFactory.getDefault().getInstance(argument);
     }
 
@@ -395,12 +401,14 @@ public class ProtocolRequestBuilder {
      * {@link URIParam} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link URIParam} {@link Annotation}.
+     * @param   parameter       The {@link Method} {@link Parameter}.
      * @param   argument        The request URI as a {@link String}.
      *
      * @throws  Throwable       If the {@link Annotation} cannot be
      *                          configured.
      */
     protected void apply(URIParam annotation,
+                         Parameter parameter,
                          String argument) throws Throwable {
         uri = URIBuilderFactory.getDefault().getInstance(argument);
     }
@@ -490,7 +498,7 @@ public class ProtocolRequestBuilder {
     }
 
     /**
-     * {@link Encoded} method parameter {@link Annotation}
+     * {@link Encoded} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link Encoded} {@link Annotation}.
      *
@@ -502,7 +510,7 @@ public class ProtocolRequestBuilder {
     }
 
     /**
-     * {@link Path} method parameter {@link Annotation}
+     * {@link Path} interface/method parameter {@link Annotation}
      *
      * @param   annotation      The {@link Path} {@link Annotation}.
      *
@@ -514,7 +522,7 @@ public class ProtocolRequestBuilder {
     }
 
     /**
-     * {@link Consumes} method parameter {@link Annotation}
+     * {@link Consumes} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link Consumes} {@link Annotation}.
      *
@@ -526,7 +534,7 @@ public class ProtocolRequestBuilder {
     }
 
     /**
-     * {@link Produces} method parameter {@link Annotation}
+     * {@link Produces} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link Produces} {@link Annotation}.
      *
@@ -541,6 +549,7 @@ public class ProtocolRequestBuilder {
      * {@link CookieParam} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link CookieParam} {@link Annotation}.
+     * @param   parameter       The {@link Method} {@link Parameter}.
      * @param   argument        The {@link Object} representing the cookie
      *                          parameter value.
      *
@@ -548,6 +557,7 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void apply(CookieParam annotation,
+                         Parameter parameter,
                          Object argument) throws Throwable {
         if (argument != null) {
             throw new UnsupportedOperationException(annotation.toString());
@@ -558,6 +568,7 @@ public class ProtocolRequestBuilder {
      * {@link FormParam} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link FormParam} {@link Annotation}.
+     * @param   parameter       The {@link Method} {@link Parameter}.
      * @param   argument        The {@link Object} representing the form
      *                          parameter value.
      *
@@ -565,9 +576,15 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void apply(FormParam annotation,
+                         Parameter parameter,
                          Object argument) throws Throwable {
+        String name =
+            isNotBlank(annotation.value())
+                ? annotation.value()
+                : parameter.getName();
+
         if (argument != null) {
-            formNVPList.add(new BasicNameValuePair(annotation.value(),
+            formNVPList.add(new BasicNameValuePair(name,
                                                    String.valueOf(argument)));
         }
     }
@@ -576,6 +593,7 @@ public class ProtocolRequestBuilder {
      * {@link HeaderParam} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link HeaderParam} {@link Annotation}.
+     * @param   parameter       The {@link Method} {@link Parameter}.
      * @param   argument        The {@link Object} representing the header
      *                          parameter value.
      *
@@ -583,9 +601,15 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void apply(HeaderParam annotation,
+                         Parameter parameter,
                          Object argument) throws Throwable {
+        String name =
+            isNotBlank(annotation.value())
+                ? annotation.value()
+                : parameter.getName();
+
         if (argument != null) {
-            request.setHeader(annotation.value(), String.valueOf(argument));
+            request.setHeader(name, String.valueOf(argument));
         }
     }
 
@@ -593,6 +617,7 @@ public class ProtocolRequestBuilder {
      * {@link MatrixParam} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link MatrixParam} {@link Annotation}.
+     * @param   parameter       The {@link Method} {@link Parameter}.
      * @param   argument        The {@link Object} representing the matrix
      *                          parameter value.
      *
@@ -600,6 +625,7 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void apply(MatrixParam annotation,
+                         Parameter parameter,
                          Object argument) throws Throwable {
         if (argument != null) {
             throw new UnsupportedOperationException(annotation.toString());
@@ -610,6 +636,7 @@ public class ProtocolRequestBuilder {
      * {@link PathParam} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link PathParam} {@link Annotation}.
+     * @param   parameter       The {@link Method} {@link Parameter}.
      * @param   argument        The {@link Object} representing the path
      *                          parameter value.
      *
@@ -617,11 +644,17 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void apply(PathParam annotation,
+                         Parameter parameter,
                          Object argument) throws Throwable {
+        String name =
+            isNotBlank(annotation.value())
+                ? annotation.value()
+                : parameter.getName();
+
         if (argument != null) {
-            pathMap.put(annotation.value(), String.valueOf(argument));
+            pathMap.put(name, String.valueOf(argument));
         } else {
-            pathMap.remove(annotation.value());
+            pathMap.remove(name);
         }
     }
 
@@ -629,6 +662,7 @@ public class ProtocolRequestBuilder {
      * {@link QueryParam} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link QueryParam} {@link Annotation}.
+     * @param   parameter       The {@link Method} {@link Parameter}.
      * @param   argument        The {@link Object} representing the query
      *                          parameter value.
      *
@@ -636,11 +670,17 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void apply(QueryParam annotation,
+                         Parameter parameter,
                          Object argument) throws Throwable {
+        String name =
+            isNotBlank(annotation.value())
+                ? annotation.value()
+                : parameter.getName();
+
         if (argument != null) {
-            queryMap.put(annotation.value(), String.valueOf(argument));
+            queryMap.put(name, String.valueOf(argument));
         } else {
-            queryMap.remove(annotation.value());
+            queryMap.remove(name);
         }
     }
 
