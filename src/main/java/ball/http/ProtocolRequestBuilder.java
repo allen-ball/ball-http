@@ -147,7 +147,7 @@ public class ProtocolRequestBuilder {
         .collect(Collectors.toSet());
 
     private final ProtocolClient<?> client;
-    private transient UriBuilder uri = null;
+    private transient UriBuilder uri = UriBuilder.fromUri(EMPTY);
     private transient List<NameValuePair> formNVPList = new ArrayList<>();
     private transient Map<String,Object> pathMap = new LinkedHashMap<>();
     private transient Map<String,Object> queryMap = new LinkedHashMap<>();
@@ -174,62 +174,45 @@ public class ProtocolRequestBuilder {
      * @throws  Throwable       If the call fails for any reason.
      */
     public HttpMessage build(Method method, Object[] argv) throws Throwable {
-        HttpMessage message = null;
+        /*
+         * Process annotations.
+         */
+        process(method.getDeclaringClass().getAnnotations());
+        process(method.getAnnotations());
 
-        if (method.getDeclaringClass().equals(client.protocol())) {
-            synchronized (this) {
-                uri = UriBuilder.fromUri(EMPTY);
-                formNVPList.clear();
-                pathMap.clear();
-                queryMap.clear();
-                request = null;
-                /*
-                 * Process annotations.
-                 */
-                process(method.getDeclaringClass().getAnnotations());
-                process(method.getAnnotations());
+        Parameter[] parameters = method.getParameters();
 
-                Parameter[] parameters = method.getParameters();
+        for (int i = 0; i < parameters.length; i += 1) {
+            Class<?> type = parameters[i].getType();
 
-                for (int i = 0; i < parameters.length; i += 1) {
-                    Class<?> type = parameters[i].getType();
-
-                    if (HttpRequest.class.isAssignableFrom(type)) {
-                        request = (HttpRequest) argv[i];
-                    }
-
-                    process(parameters[i], argv[i]);
-                }
-                /*
-                 * Apply form parameters if specified.
-                 */
-                if (! formNVPList.isEmpty()) {
-                    ((HttpEntityEnclosingRequestBase) request)
-                        .setEntity(new UrlEncodedFormEntity(formNVPList,
-                                                            client.getCharset()));
-                }
-                /*
-                 * Apply URI path and query parameters and build the URI.
-                 */
-                if (request instanceof HttpRequestBase) {
-                    uri = uri.resolveTemplates(pathMap);
-
-                    for (Map.Entry<String,?> entry : queryMap.entrySet()) {
-                        uri =
-                            uri.replaceQueryParam(entry.getKey(),
-                                                  entry.getValue());
-                    }
-
-                    ((HttpRequestBase) request).setURI(uri.build());
-                }
-
-                message = request;
+            if (HttpRequest.class.isAssignableFrom(type)) {
+                request = (HttpRequest) argv[i];
             }
-        } else {
-            throw new IllegalArgumentException(String.valueOf(method));
+
+            process(parameters[i], argv[i]);
+        }
+        /*
+         * Apply form parameters if specified.
+         */
+        if (! formNVPList.isEmpty()) {
+            ((HttpEntityEnclosingRequestBase) request)
+                .setEntity(new UrlEncodedFormEntity(formNVPList,
+                                                    client.getCharset()));
+        }
+        /*
+         * Apply URI path and query parameters and build the URI.
+         */
+        if (request instanceof HttpRequestBase) {
+            uri = uri.resolveTemplates(pathMap);
+
+            for (Map.Entry<String,?> entry : queryMap.entrySet()) {
+                uri = uri.replaceQueryParam(entry.getKey(), entry.getValue());
+            }
+
+            ((HttpRequestBase) request).setURI(uri.build());
         }
 
-        return message;
+        return request;
     }
 
     private void process(Annotation[] annotations) throws Throwable {

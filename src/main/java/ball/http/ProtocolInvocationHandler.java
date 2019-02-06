@@ -34,7 +34,6 @@ import static java.util.Objects.requireNonNull;
  */
 public class ProtocolInvocationHandler implements InvocationHandler {
     private final ProtocolClient<?> client;
-    private final ProtocolRequestBuilder builder;
 
     /**
      * Sole constructor.
@@ -43,7 +42,6 @@ public class ProtocolInvocationHandler implements InvocationHandler {
      */
     protected ProtocolInvocationHandler(ProtocolClient<?> client) {
         this.client = requireNonNull(client, "client");
-        this.builder = new ProtocolRequestBuilder(client);
     }
 
     @Override
@@ -68,7 +66,8 @@ public class ProtocolInvocationHandler implements InvocationHandler {
             result = method.invoke(proxy, argv);
         } else {
             Class<?> returnType = method.getReturnType();
-            HttpMessage request = builder.build(method, argv);
+            HttpMessage request =
+                new ProtocolRequestBuilder(client).build(method, argv);
 
             if (returnType.isAssignableFrom(request.getClass())) {
                 result = returnType.cast(request);
