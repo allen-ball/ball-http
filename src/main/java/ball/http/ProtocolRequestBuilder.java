@@ -6,7 +6,6 @@
 package ball.http;
 
 import ball.activation.ByteArrayDataSource;
-import ball.http.annotation.Entity;
 import ball.http.annotation.HostParam;
 import ball.http.annotation.JSON;
 import ball.http.annotation.URIParam;
@@ -65,7 +64,6 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.AbstractHttpEntity;
 import org.apache.http.entity.ContentType;
-import org.apache.http.entity.FileEntity;
 import org.apache.http.message.BasicNameValuePair;
 
 import static java.util.Objects.requireNonNull;
@@ -239,6 +237,17 @@ public class ProtocolRequestBuilder {
 
     private void process(Parameter parameter,
                          Object argument) throws Throwable {
+        try {
+            MethodUtils.invokeMethod(this, true,
+                                     APPLY,
+                                     new Object[] { parameter, argument },
+                                     new Class<?>[] { Parameter.class, parameter.getType() });
+        } catch (NoSuchMethodException exception) {
+        } catch (IllegalAccessException exception) {
+        } catch (InvocationTargetException exception) {
+            throw exception.getTargetException();
+        }
+
         Annotation[] annotations = parameter.getAnnotations();
 
         for (int i = 0; i < annotations.length; i += 1) {
@@ -299,113 +308,6 @@ public class ProtocolRequestBuilder {
      */
     protected void apply(URISpecification annotation) throws Throwable {
         uri = URIBuilderFactory.getDefault().getInstance(annotation);
-    }
-
-    /**
-     * {@link Entity} method parameter {@link Annotation}
-     *
-     * @param   annotation      The {@link Entity} {@link Annotation}.
-     * @param   parameter       The {@link Method} {@link Parameter}.
-     * @param   argument        The {@link HttpEntity}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(Entity annotation,
-                         Parameter parameter,
-                         HttpEntity argument) throws Throwable {
-        if (isNotBlank(annotation.value())) {
-            ((AbstractHttpEntity) argument)
-                .setContentType(ContentType
-                                .parse(annotation.value())
-                                .withCharset(client.getCharset())
-                                .toString());
-        }
-
-        ((HttpEntityEnclosingRequestBase) request).setEntity(argument);
-    }
-
-    /**
-     * {@link Entity} method parameter {@link Annotation}
-     *
-     * @param   annotation      The {@link Entity} {@link Annotation}.
-     * @param   parameter       The {@link Method} {@link Parameter}.
-     * @param   argument        The {@link File} representing the
-     *                          {@link HttpEntity}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(Entity annotation,
-                         Parameter parameter,
-                         File argument) throws Throwable {
-        apply(annotation, parameter, new FileEntity(argument));
-    }
-
-    /**
-     * {@link HostParam} method parameter {@link Annotation}
-     *
-     * @param   annotation      The {@link HostParam} {@link Annotation}.
-     * @param   parameter       The {@link Method} {@link Parameter}.
-     * @param   argument        The {@link String} representing the host
-     *                          parameter value.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(HostParam annotation,
-                         Parameter parameter,
-                         String argument) throws Throwable {
-        uri.setHost(argument);
-    }
-
-    /**
-     * {@link JSON} method parameter {@link Annotation}
-     *
-     * @param   annotation      The {@link JSON} {@link Annotation}.
-     * @param   parameter       The {@link Method} {@link Parameter}.
-     * @param   argument        The {@link Object} to map.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(JSON annotation,
-                         Parameter parameter,
-                         Object argument) throws Throwable {
-        ((HttpEntityEnclosingRequestBase) request)
-            .setEntity(new JSONHttpEntity(argument));
-    }
-
-    /**
-     * {@link URIParam} method parameter {@link Annotation}
-     *
-     * @param   annotation      The {@link URIParam} {@link Annotation}.
-     * @param   parameter       The {@link Method} {@link Parameter}.
-     * @param   argument        The request {@link URI}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(URIParam annotation,
-                         Parameter parameter,
-                         URI argument) throws Throwable {
-        uri = URIBuilderFactory.getDefault().getInstance(argument);
-    }
-
-    /**
-     * {@link URIParam} method parameter {@link Annotation}
-     *
-     * @param   annotation      The {@link URIParam} {@link Annotation}.
-     * @param   parameter       The {@link Method} {@link Parameter}.
-     * @param   argument        The request URI as a {@link String}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(URIParam annotation,
-                         Parameter parameter,
-                         String argument) throws Throwable {
-        uri = URIBuilderFactory.getDefault().getInstance(argument);
     }
 
     /**
@@ -505,7 +407,7 @@ public class ProtocolRequestBuilder {
     }
 
     /**
-     * {@link Path} interface/method parameter {@link Annotation}
+     * {@link Path} interface/method {@link Annotation}
      *
      * @param   annotation      The {@link Path} {@link Annotation}.
      *
@@ -538,6 +440,98 @@ public class ProtocolRequestBuilder {
      */
     protected void apply(Produces annotation) throws Throwable {
         throw new UnsupportedOperationException(annotation.toString());
+    }
+
+    /**
+     * {@link HttpMessage} method parameter
+     *
+     * @param   parameter       The {@link Method} {@link Parameter}.
+     * @param   argument        The {@link HttpMessage}.
+     *
+     * @throws  Throwable       If the argument cannot be configured.
+     */
+    protected void apply(Parameter parameter,
+                         HttpMessage argument) throws Throwable {
+        request = argument;
+    }
+
+    /**
+     * {@link HttpEntity} method parameter
+     *
+     * @param   parameter       The {@link Method} {@link Parameter}.
+     * @param   argument        The {@link HttpEntity}.
+     *
+     * @throws  Throwable       If the argument cannot be configured.
+     */
+    protected void apply(Parameter parameter,
+                         HttpEntity argument) throws Throwable {
+        ((HttpEntityEnclosingRequestBase) request).setEntity(argument);
+    }
+
+    /**
+     * {@link HostParam} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link HostParam} {@link Annotation}.
+     * @param   parameter       The {@link Method} {@link Parameter}.
+     * @param   argument        The {@link String} representing the host
+     *                          parameter value.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(HostParam annotation,
+                         Parameter parameter,
+                         String argument) throws Throwable {
+        uri.setHost(argument);
+    }
+
+    /**
+     * {@link JSON} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link JSON} {@link Annotation}.
+     * @param   parameter       The {@link Method} {@link Parameter}.
+     * @param   argument        The {@link Object} to map.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(JSON annotation,
+                         Parameter parameter,
+                         Object argument) throws Throwable {
+        ((HttpEntityEnclosingRequestBase) request)
+            .setEntity(new JSONHttpEntity(argument));
+    }
+
+    /**
+     * {@link URIParam} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link URIParam} {@link Annotation}.
+     * @param   parameter       The {@link Method} {@link Parameter}.
+     * @param   argument        The request {@link URI}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(URIParam annotation,
+                         Parameter parameter,
+                         URI argument) throws Throwable {
+        uri = URIBuilderFactory.getDefault().getInstance(argument);
+    }
+
+    /**
+     * {@link URIParam} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link URIParam} {@link Annotation}.
+     * @param   parameter       The {@link Method} {@link Parameter}.
+     * @param   argument        The request URI as a {@link String}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(URIParam annotation,
+                         Parameter parameter,
+                         String argument) throws Throwable {
+        uri = URIBuilderFactory.getDefault().getInstance(argument);
     }
 
     /**

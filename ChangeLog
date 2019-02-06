@@ -5,6 +5,7 @@
 
 	* src/main/java/ball/http/ProtocolRequestBuilder.java:
 	Leverage parameter names through reflection.
+	Define supported, un-annotated parameters.
 
 2019-01-31  Allen D. Ball  <ball@sol.local>
 
