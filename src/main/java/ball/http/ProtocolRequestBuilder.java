@@ -49,6 +49,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.UriBuilder;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.apache.http.HttpEntity;
@@ -65,7 +66,6 @@ import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.AbstractHttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.message.BasicNameValuePair;
@@ -147,10 +147,10 @@ public class ProtocolRequestBuilder {
         .collect(Collectors.toSet());
 
     private final ProtocolClient<?> client;
-    private transient URIBuilder uri = null;
+    private transient UriBuilder uri = null;
     private transient List<NameValuePair> formNVPList = new ArrayList<>();
-    private transient Map<String,String> pathMap = new LinkedHashMap<>();
-    private transient Map<String,String> queryMap = new LinkedHashMap<>();
+    private transient Map<String,Object> pathMap = new LinkedHashMap<>();
+    private transient Map<String,Object> queryMap = new LinkedHashMap<>();
     private transient HttpMessage request = null;
 
     /**
@@ -178,7 +178,7 @@ public class ProtocolRequestBuilder {
 
         if (method.getDeclaringClass().equals(client.protocol())) {
             synchronized (this) {
-                uri = URIBuilderFactory.getDefault().getInstance();
+                uri = UriBuilder.fromUri(EMPTY);
                 formNVPList.clear();
                 pathMap.clear();
                 queryMap.clear();
@@ -211,17 +211,15 @@ public class ProtocolRequestBuilder {
                 /*
                  * Apply URI path and query parameters and build the URI.
                  */
-                for (Map.Entry<String,String> entry : pathMap.entrySet()) {
-                    uri.setPath(uri.getPath()
-                                .replaceAll("[{]" + entry.getKey() + "[}]",
-                                            entry.getValue()));
-                }
-
-                for (Map.Entry<String,String> entry : queryMap.entrySet()) {
-                    uri.addParameter(entry.getKey(), entry.getValue());
-                }
-
                 if (request instanceof HttpRequestBase) {
+                    uri = uri.resolveTemplates(pathMap);
+
+                    for (Map.Entry<String,?> entry : queryMap.entrySet()) {
+                        uri =
+                            uri.replaceQueryParam(entry.getKey(),
+                                                  entry.getValue());
+                    }
+
                     ((HttpRequestBase) request).setURI(uri.build());
                 }
 
@@ -302,22 +300,6 @@ public class ProtocolRequestBuilder {
         }
     }
 
-    private void appendURIPath(String string) {
-        if (isNotBlank(string)) {
-            String path = uri.getPath();
-
-            if (isBlank(path)) {
-                path = "/";
-            }
-
-            if (! path.endsWith("/")) {
-                path += "/";
-            }
-
-            uri.setPath(path + string.replaceAll("^[/]+", EMPTY));
-        }
-    }
-
     /**
      * {@link HttpMessage} method parameter
      *
@@ -354,7 +336,25 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void apply(URISpecification annotation) throws Throwable {
-        uri = URIBuilderFactory.getDefault().getInstance(annotation);
+        uri = UriBuilder.fromUri(annotation.value());
+
+        if (isNotBlank(annotation.scheme())) {
+            uri = uri.scheme(annotation.scheme());
+        }
+
+        if (isNotBlank(annotation.userInfo())) {
+            uri = uri.userInfo(annotation.userInfo());
+        }
+
+        if (isNotBlank(annotation.host())) {
+            uri = uri.host(annotation.host());
+        }
+
+        uri = uri.port((annotation.port()) > 0 ? annotation.port() : -1);
+
+        if (isNotBlank(annotation.path())) {
+            uri = uri.replacePath(annotation.path());
+        }
     }
 
     /**
@@ -371,7 +371,7 @@ public class ProtocolRequestBuilder {
     protected void apply(HostParam annotation,
                          Parameter parameter,
                          String argument) throws Throwable {
-        uri.setHost(argument);
+        uri = uri.host(argument);
     }
 
     /**
@@ -404,7 +404,7 @@ public class ProtocolRequestBuilder {
     protected void apply(URIParam annotation,
                          Parameter parameter,
                          URI argument) throws Throwable {
-        uri = URIBuilderFactory.getDefault().getInstance(argument);
+        uri = uri.uri(argument);
     }
 
     /**
@@ -420,7 +420,7 @@ public class ProtocolRequestBuilder {
     protected void apply(URIParam annotation,
                          Parameter parameter,
                          String argument) throws Throwable {
-        uri = URIBuilderFactory.getDefault().getInstance(argument);
+        uri = uri.uri(argument);
     }
 
     /**
@@ -433,13 +433,7 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void apply(ApplicationPath annotation) throws Throwable {
-        String value = annotation.value();
-
-        if (! value.endsWith("/")) {
-            value += "/";
-        }
-
-        uri = URIBuilderFactory.getDefault().getInstance(value);
+        uri = uri.uri(annotation.value());
     }
 
     /**
@@ -638,7 +632,7 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void apply(Path annotation) throws Throwable {
-        appendURIPath(annotation.value());
+        uri = uri.path(annotation.value());
     }
 
     /**
