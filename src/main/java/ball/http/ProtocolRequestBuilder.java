@@ -28,10 +28,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.ws.rs.ApplicationPath;
+import javax.ws.rs.BeanParam;
+import javax.ws.rs.ConstrainedTo;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.CookieParam;
+/* import javax.ws.rs.DefaultValue; */
 import javax.ws.rs.DELETE;
-import javax.ws.rs.Encoded;
+/* import javax.ws.rs.Encoded; */
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.HEAD;
@@ -93,6 +97,11 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  *
  * {@include #PARAMETER_ANNOTATIONS}
  * </p>
+ * <p>
+ * Supported method parameter types:
+ *
+ * {@include #PARAMETER_TYPES}
+ * </p>
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$
  */
@@ -123,6 +132,18 @@ public class ProtocolRequestBuilder {
         .filter(t -> ClassUtils.isAssignable(new Class<?>[] { t.getParameterTypes()[0], Parameter.class, null },
                                              t.getParameterTypes()))
         .map(t -> t.getParameterTypes()[0].asSubclass(Annotation.class))
+        .collect(Collectors.toSet());
+
+    /**
+     * Supported method parameter types.
+     */
+    public static final Set<Class<?>> PARAMETER_TYPES =
+        Arrays.stream(ProtocolRequestBuilder.class.getDeclaredMethods())
+        .filter(t -> t.getName().equals(APPLY))
+        .filter(t -> t.getParameterCount() > 0)
+        .filter(t -> ClassUtils.isAssignable(new Class<?>[] { Parameter.class, null },
+                                             t.getParameterTypes()))
+        .map(t -> t.getParameterTypes()[1])
         .collect(Collectors.toSet());
 
     private final ProtocolClient<?> client;
@@ -298,151 +319,6 @@ public class ProtocolRequestBuilder {
     }
 
     /**
-     * {@link URISpecification} interface/method {@link Annotation}
-     *
-     * @param   annotation      The {@link URISpecification}
-     *                          {@link Annotation}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(URISpecification annotation) throws Throwable {
-        uri = URIBuilderFactory.getDefault().getInstance(annotation);
-    }
-
-    /**
-     * {@link DELETE} interface/method {@link Annotation}
-     *
-     * @param   annotation      The {@link DELETE} {@link Annotation}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(DELETE annotation) throws Throwable {
-        request = new HttpDelete();
-    }
-
-    /**
-     * {@link GET} interface/method {@link Annotation}
-     *
-     * @param   annotation      The {@link GET} {@link Annotation}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(GET annotation) throws Throwable {
-        request = new HttpGet();
-    }
-
-    /**
-     * {@link HEAD} interface/method {@link Annotation}
-     *
-     * @param   annotation      The {@link HEAD} {@link Annotation}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(HEAD annotation) throws Throwable {
-        request = new HttpHead();
-    }
-
-    /**
-     * {@link OPTIONS} interface/method {@link Annotation}
-     *
-     * @param   annotation      The {@link OPTIONS} {@link Annotation}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(OPTIONS annotation) throws Throwable {
-        request = new HttpOptions();
-    }
-
-    /**
-     * {@link PATCH} interface/method {@link Annotation}
-     *
-     * @param   annotation      The {@link PATCH} {@link Annotation}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(PATCH annotation) throws Throwable {
-        request = new HttpPatch();
-    }
-
-    /**
-     * {@link POST} interface/method {@link Annotation}
-     *
-     * @param   annotation      The {@link POST} {@link Annotation}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(POST annotation) throws Throwable {
-        request = new HttpPost();
-    }
-
-    /**
-     * {@link PUT} interface/method {@link Annotation}
-     *
-     * @param   annotation      The {@link PUT} {@link Annotation}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(PUT annotation) throws Throwable {
-        request = new HttpPut();
-    }
-
-    /**
-     * {@link Encoded} interface/method {@link Annotation}
-     *
-     * @param   annotation      The {@link Encoded} {@link Annotation}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(Encoded annotation) throws Throwable {
-        throw new UnsupportedOperationException(annotation.toString());
-    }
-
-    /**
-     * {@link Path} interface/method {@link Annotation}
-     *
-     * @param   annotation      The {@link Path} {@link Annotation}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(Path annotation) throws Throwable {
-        appendURIPath(annotation.value());
-    }
-
-    /**
-     * {@link Consumes} interface/method {@link Annotation}
-     *
-     * @param   annotation      The {@link Consumes} {@link Annotation}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(Consumes annotation) throws Throwable {
-        throw new UnsupportedOperationException(annotation.toString());
-    }
-
-    /**
-     * {@link Produces} interface/method {@link Annotation}
-     *
-     * @param   annotation      The {@link Produces} {@link Annotation}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void apply(Produces annotation) throws Throwable {
-        throw new UnsupportedOperationException(annotation.toString());
-    }
-
-    /**
      * {@link HttpMessage} method parameter
      *
      * @param   parameter       The {@link Method} {@link Parameter}.
@@ -466,6 +342,19 @@ public class ProtocolRequestBuilder {
     protected void apply(Parameter parameter,
                          HttpEntity argument) throws Throwable {
         ((HttpEntityEnclosingRequestBase) request).setEntity(argument);
+    }
+
+    /**
+     * {@link URISpecification} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link URISpecification}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(URISpecification annotation) throws Throwable {
+        uri = URIBuilderFactory.getDefault().getInstance(annotation);
     }
 
     /**
@@ -535,6 +424,57 @@ public class ProtocolRequestBuilder {
     }
 
     /**
+     * {@link ApplicationPath} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link ApplicationPath}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(ApplicationPath annotation) throws Throwable {
+        String value = annotation.value();
+
+        if (! value.endsWith("/")) {
+            value += "/";
+        }
+
+        uri = URIBuilderFactory.getDefault().getInstance(value);
+    }
+
+    /**
+     * {@link BeanParam} method parameter {@link Annotation}
+     *
+     * @param   annotation      The {@link BeanParam} {@link Annotation}.
+     * @param   parameter       The {@link Method} {@link Parameter}.
+     * @param   argument        The {@link Object} representing the cookie
+     *                          parameter value.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(BeanParam annotation,
+                         Parameter parameter,
+                         Object argument) throws Throwable {
+        if (argument != null) {
+            throw new UnsupportedOperationException(annotation.toString());
+        }
+    }
+
+    /**
+     * {@link ConstrainedTo} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link ConstrainedTo}
+     *                          {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(ConstrainedTo annotation) throws Throwable {
+        throw new UnsupportedOperationException(annotation.toString());
+    }
+
+    /**
      * {@link CookieParam} method parameter {@link Annotation}
      *
      * @param   annotation      The {@link CookieParam} {@link Annotation}.
@@ -548,9 +488,31 @@ public class ProtocolRequestBuilder {
     protected void apply(CookieParam annotation,
                          Parameter parameter,
                          Object argument) throws Throwable {
-        if (argument != null) {
-            throw new UnsupportedOperationException(annotation.toString());
-        }
+        throw new UnsupportedOperationException(annotation.toString());
+    }
+
+    /**
+     * {@link Consumes} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link Consumes} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(Consumes annotation) throws Throwable {
+        throw new UnsupportedOperationException(annotation.toString());
+    }
+
+    /**
+     * {@link DELETE} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link DELETE} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(DELETE annotation) throws Throwable {
+        request = new HttpDelete();
     }
 
     /**
@@ -576,6 +538,30 @@ public class ProtocolRequestBuilder {
             formNVPList.add(new BasicNameValuePair(name,
                                                    String.valueOf(argument)));
         }
+    }
+
+    /**
+     * {@link GET} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link GET} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(GET annotation) throws Throwable {
+        request = new HttpGet();
+    }
+
+    /**
+     * {@link HEAD} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link HEAD} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(HEAD annotation) throws Throwable {
+        request = new HttpHead();
     }
 
     /**
@@ -616,9 +602,43 @@ public class ProtocolRequestBuilder {
     protected void apply(MatrixParam annotation,
                          Parameter parameter,
                          Object argument) throws Throwable {
-        if (argument != null) {
-            throw new UnsupportedOperationException(annotation.toString());
-        }
+        throw new UnsupportedOperationException(annotation.toString());
+    }
+
+    /**
+     * {@link OPTIONS} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link OPTIONS} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(OPTIONS annotation) throws Throwable {
+        request = new HttpOptions();
+    }
+
+    /**
+     * {@link PATCH} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link PATCH} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(PATCH annotation) throws Throwable {
+        request = new HttpPatch();
+    }
+
+    /**
+     * {@link Path} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link Path} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(Path annotation) throws Throwable {
+        appendURIPath(annotation.value());
     }
 
     /**
@@ -645,6 +665,42 @@ public class ProtocolRequestBuilder {
         } else {
             pathMap.remove(name);
         }
+    }
+
+    /**
+     * {@link POST} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link POST} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(POST annotation) throws Throwable {
+        request = new HttpPost();
+    }
+
+    /**
+     * {@link Produces} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link Produces} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(Produces annotation) throws Throwable {
+        throw new UnsupportedOperationException(annotation.toString());
+    }
+
+    /**
+     * {@link PUT} interface/method {@link Annotation}
+     *
+     * @param   annotation      The {@link PUT} {@link Annotation}.
+     *
+     * @throws  Throwable       If the {@link Annotation} cannot be
+     *                          configured.
+     */
+    protected void apply(PUT annotation) throws Throwable {
+        request = new HttpPut();
     }
 
     /**
