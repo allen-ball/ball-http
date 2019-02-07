@@ -6,8 +6,6 @@
 package ball.http;
 
 import ball.activation.ByteArrayDataSource;
-import ball.http.annotation.HostParam;
-import ball.http.annotation.URISpecification;
 import ball.util.ClassOrder;
 import java.io.File;
 import java.io.IOException;
@@ -312,39 +310,6 @@ public class ProtocolRequestBuilder {
     }
 
     /**
-     * {@link URISpecification} type (interface) {@link Annotation}
-     *
-     * @param   annotation      The {@link URISpecification}
-     *                          {@link Annotation}.
-     * @param   type            The annotated {@link Class}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void type(URISpecification annotation,
-                        Class<?> type) throws Throwable {
-        uri = UriBuilder.fromUri(annotation.value());
-
-        if (isNotBlank(annotation.scheme())) {
-            uri = uri.scheme(annotation.scheme());
-        }
-
-        if (isNotBlank(annotation.userInfo())) {
-            uri = uri.userInfo(annotation.userInfo());
-        }
-
-        if (isNotBlank(annotation.host())) {
-            uri = uri.host(annotation.host());
-        }
-
-        uri = uri.port((annotation.port()) > 0 ? annotation.port() : -1);
-
-        if (isNotBlank(annotation.path())) {
-            uri = uri.replacePath(annotation.path());
-        }
-    }
-
-    /**
      * {@link ApplicationPath} type (interface) {@link Annotation}
      *
      * @param   annotation      The {@link ApplicationPath}
@@ -411,39 +376,6 @@ public class ProtocolRequestBuilder {
      */
     protected void type(Produces annotation, Class<?> type) throws Throwable {
         throw new UnsupportedOperationException(annotation.toString());
-    }
-
-    /**
-     * {@link URISpecification} method {@link Annotation}
-     *
-     * @param   annotation      The {@link URISpecification}
-     *                          {@link Annotation}.
-     * @param   method          The annotated {@link Method}.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void method(URISpecification annotation,
-                          Method method) throws Throwable {
-        uri = UriBuilder.fromUri(annotation.value());
-
-        if (isNotBlank(annotation.scheme())) {
-            uri = uri.scheme(annotation.scheme());
-        }
-
-        if (isNotBlank(annotation.userInfo())) {
-            uri = uri.userInfo(annotation.userInfo());
-        }
-
-        if (isNotBlank(annotation.host())) {
-            uri = uri.host(annotation.host());
-        }
-
-        uri = uri.port((annotation.port()) > 0 ? annotation.port() : -1);
-
-        if (isNotBlank(annotation.path())) {
-            uri = uri.replacePath(annotation.path());
-        }
     }
 
     /**
@@ -675,23 +607,6 @@ public class ProtocolRequestBuilder {
      */
     protected void method(PUT annotation, Method method) throws Throwable {
         request = new HttpPut();
-    }
-
-    /**
-     * {@link HostParam} method parameter {@link Annotation}
-     *
-     * @param   annotation      The {@link HostParam} {@link Annotation}.
-     * @param   parameter       The {@link Method} {@link Parameter}.
-     * @param   argument        The {@link String} representing the host
-     *                          parameter value.
-     *
-     * @throws  Throwable       If the {@link Annotation} cannot be
-     *                          configured.
-     */
-    protected void parameter(HostParam annotation,
-                             Parameter parameter,
-                             String argument) throws Throwable {
-        uri = uri.host(argument);
     }
 
     /**
