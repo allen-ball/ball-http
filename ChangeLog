@@ -1,3 +1,7 @@
+2019-02-06  Allen D. Ball  <ball@sol.local>
+
+	* Removed custom annotations that have a javax.ws.rs counterpart.
+
 2019-02-05  Allen D. Ball  <ball@sol.local>
 
 	* src/main/java/ball/http/ProtocolInvocationHandler.java:
@@ -8,8 +12,6 @@
 	Define supported, un-annotated parameters.
 
 2019-01-31  Allen D. Ball  <ball@sol.local>
-
-	* Removed custom annotations that have a javax.ws.rs counterpart.
 
 	* Start development of 2.0-SNAPSHOT.
 
@@ -52,12 +54,6 @@
 	* src/main/java/ball/http/ProtocolInvocationHandler.java:
 	Use a ResponseHandler to convert HttpResponse to protocol method
 	return type.
-
-2017-07-25  Allen D. Ball  <ball@sol>
-
-	* Added support for @HostParameter.  Added type() member to
-	protocol method annotations to specify the respective
-	implementations.
 
 2017-07-24  Allen D. Ball  <ball@sol>
 
