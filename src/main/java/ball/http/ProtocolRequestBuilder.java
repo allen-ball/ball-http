@@ -21,9 +21,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.TreeMap;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.ws.rs.ApplicationPath;
@@ -170,10 +168,10 @@ public class ProtocolRequestBuilder {
         .collect(Collectors.toSet());
 
     private final ProtocolClient<?> client;
-    private transient UriBuilder uri = UriBuilder.fromUri(EMPTY);
-    private transient List<NameValuePair> formNVPList = new ArrayList<>();
-    private transient Map<String,Object> pathMap = new LinkedHashMap<>();
     private transient HttpMessage request = null;
+    private transient UriBuilder uri = UriBuilder.fromUri(EMPTY);
+    private transient TreeMap<String,Object> templateValues = new TreeMap<>();
+    private transient Object body = null;
 
     /**
      * Sole constructor.
@@ -197,23 +195,32 @@ public class ProtocolRequestBuilder {
      */
     public HttpMessage build(Method method, Object[] argv) throws Throwable {
         /*
-         * Process annotations and arguments.
+         * Process annotations and arguments
          */
         process(method.getDeclaringClass(), method, argv);
         /*
-         * Apply form parameters if specified.
-         */
-        if (! formNVPList.isEmpty()) {
-            ((HttpEntityEnclosingRequestBase) request)
-                .setEntity(new UrlEncodedFormEntity(formNVPList,
-                                                    client.getCharset()));
-        }
-        /*
-         * Apply URI.
+         * URI
          */
         if (request instanceof HttpRequestBase) {
             ((HttpRequestBase) request)
-                .setURI(uri.resolveTemplates(pathMap).build());
+                .setURI(uri.resolveTemplates(templateValues).build());
+        }
+        /*
+         * Body
+         */
+        HttpEntity entity = null;
+
+        if (body instanceof HttpEntity) {
+            entity = (HttpEntity) body;
+        } else if (body instanceof Form) {
+            entity =
+                new UrlEncodedFormEntity((Form) body, client.getCharset());
+        } else if (body != null) {
+            entity = new JSONHttpEntity(body);
+        }
+
+        if (entity != null) {
+            ((HttpEntityEnclosingRequestBase) request).setEntity(entity);
         }
 
         return request;
@@ -272,8 +279,7 @@ public class ProtocolRequestBuilder {
             try {
                 invoke("parameter",
                        new Object[] { parameter, argument },
-                       Parameter.class,
-                       parameter.getType());
+                       Parameter.class, parameter.getType());
             } catch (NoSuchMethodException exception) {
             } catch (IllegalAccessException exception) {
             } catch (InvocationTargetException exception) {
@@ -289,9 +295,7 @@ public class ProtocolRequestBuilder {
             if (PARAMETER_ANNOTATIONS.contains(annotation.annotationType())) {
                 invoke("parameter",
                        new Object[] { annotation, parameter, argument },
-                       annotation.annotationType(),
-                       Parameter.class,
-                       parameter.getType());
+                       annotation.annotationType(), Parameter.class, parameter.getType());
             }
         } catch (NoSuchMethodException exception) {
             throw new IllegalStateException(String.valueOf(annotation.annotationType()),
@@ -303,7 +307,7 @@ public class ProtocolRequestBuilder {
     }
 
     private void invoke(String name, Object[] argv,
-                       Class<?>... parameters) throws Throwable {
+                        Class<?>... parameters) throws Throwable {
         MethodUtils.invokeMethod(this, true, name, argv, parameters);
     }
 
@@ -746,8 +750,11 @@ public class ProtocolRequestBuilder {
                 : parameter.getName();
 
         if (argument != null) {
-            formNVPList.add(new BasicNameValuePair(name,
-                                                   String.valueOf(argument)));
+            if (body == null) {
+                body = new Form();
+            }
+
+            ((Form) body).add(name, String.valueOf(argument));
         }
     }
 
@@ -817,9 +824,9 @@ public class ProtocolRequestBuilder {
                 : parameter.getName();
 
         if (argument != null) {
-            pathMap.put(name, String.valueOf(argument));
+            templateValues.put(name, String.valueOf(argument));
         } else {
-            pathMap.remove(name);
+            templateValues.remove(name);
         }
     }
 
@@ -868,7 +875,7 @@ public class ProtocolRequestBuilder {
      */
     protected void parameter(Parameter parameter,
                              HttpEntity argument) throws Throwable {
-        ((HttpEntityEnclosingRequestBase) request).setEntity(argument);
+        body = argument;
     }
 
     /**
@@ -894,12 +901,21 @@ public class ProtocolRequestBuilder {
      */
     protected void parameter(Parameter parameter,
                              Object argument) throws Throwable {
-        ((HttpEntityEnclosingRequestBase) request)
-            .setEntity(new JSONHttpEntity(argument));
+        body = argument;
     }
 
     @Override
     public String toString() { return super.toString(); }
+
+    private class Form extends ArrayList<NameValuePair> {
+        private static final long serialVersionUID = -738222384949508109L;
+
+        public Form() { super(); }
+
+        public boolean add(String name, String value) {
+            return add(new BasicNameValuePair(name, value));
+        }
+    }
 
     private abstract class HttpEntityImpl extends AbstractHttpEntity {
         protected final Object object;
