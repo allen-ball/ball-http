@@ -46,7 +46,7 @@ import static java.util.Objects.requireNonNull;
  *     A {@link Proxy} which implements the annotated protocol interface
  *   </li>
  *   <li value="4">
- *     {@link.this} implements {@link HttpRequestInterceptor} and
+ *     {@link.this} implements {@link HttpRequestInterceptor}
  *     and {@link HttpResponseInterceptor} which are configured into
  *     {@link HttpClientBuilder}; subclasses can override
  *     {@link #process(HttpRequest,HttpContext)} and
@@ -54,13 +54,14 @@ import static java.util.Objects.requireNonNull;
  *   </li>
  * </ol>
  * <p>
- * See the {@link ProtocolRequestBuilder} {@code apply(Annotation,...)}
- * methods for the supported protocol interface {@link Annotation}s.
+ * See the {@link ProtocolRequestBuilder} for the supported protocol
+ * interface {@link Annotation}s and method parameter types.
+ * </p>
  * <p>
  * See {@link ProtocolRequestBuilder} and
  * {@link ProtocolInvocationHandler} for a description of how
  * {@link HttpRequest}s are generated and executed.
- *
+ * </p>
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$
  */
