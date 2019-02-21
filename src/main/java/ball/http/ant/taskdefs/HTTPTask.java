@@ -64,7 +64,7 @@ import static org.apache.tools.ant.Project.toBoolean;
  * Abstract {@link.uri http://ant.apache.org/ Ant} base {@link Task} for web
  * API client tasks.
  *
- * {@bean.info}
+ * {@ant.task}
  *
  * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
  * @version $Revision$
@@ -241,7 +241,7 @@ public abstract class HTTPTask extends Task
      * {@link org.apache.tools.ant.Task} for DELETE, GET, POST, and PUT
      * operations.
      *
-     * {@bean.info}
+     * {@ant.task}
      */
     @NoArgsConstructor(access = PROTECTED)
     protected static abstract class Request extends HTTPTask {
@@ -398,7 +398,7 @@ public abstract class HTTPTask extends Task
      * {@link.uri http://ant.apache.org/ Ant}
      * {@link org.apache.tools.ant.Task} to DELETE.
      *
-     * {@bean.info}
+     * {@ant.task}
      */
     @AntTask("http-delete")
     @NoArgsConstructor @ToString
@@ -411,7 +411,7 @@ public abstract class HTTPTask extends Task
      * {@link.uri http://ant.apache.org/ Ant}
      * {@link org.apache.tools.ant.Task} to GET.
      *
-     * {@bean.info}
+     * {@ant.task}
      */
     @AntTask("http-get")
     @NoArgsConstructor @ToString
@@ -424,7 +424,7 @@ public abstract class HTTPTask extends Task
      * {@link.uri http://ant.apache.org/ Ant}
      * {@link org.apache.tools.ant.Task} to HEAD.
      *
-     * {@bean.info}
+     * {@ant.task}
      */
     @AntTask("http-head")
     @NoArgsConstructor @ToString
@@ -437,7 +437,7 @@ public abstract class HTTPTask extends Task
      * {@link.uri http://ant.apache.org/ Ant}
      * {@link org.apache.tools.ant.Task} to OPTIONS.
      *
-     * {@bean.info}
+     * {@ant.task}
      */
     @AntTask("http-options")
     @NoArgsConstructor @ToString
@@ -450,7 +450,7 @@ public abstract class HTTPTask extends Task
      * {@link.uri http://ant.apache.org/ Ant}
      * {@link org.apache.tools.ant.Task} to PATCH.
      *
-     * {@bean.info}
+     * {@ant.task}
      */
     @AntTask("http-patch")
     @NoArgsConstructor @ToString
@@ -463,7 +463,7 @@ public abstract class HTTPTask extends Task
      * {@link.uri http://ant.apache.org/ Ant}
      * {@link org.apache.tools.ant.Task} to POST.
      *
-     * {@bean.info}
+     * {@ant.task}
      */
     @AntTask("http-post")
     @NoArgsConstructor @ToString
@@ -476,7 +476,7 @@ public abstract class HTTPTask extends Task
      * {@link.uri http://ant.apache.org/ Ant}
      * {@link org.apache.tools.ant.Task} to PUT.
      *
-     * {@bean.info}
+     * {@ant.task}
      */
     @AntTask("http-put")
     @NoArgsConstructor @ToString
