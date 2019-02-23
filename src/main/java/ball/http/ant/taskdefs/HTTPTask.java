@@ -7,7 +7,6 @@ package ball.http.ant.taskdefs;
 
 import ball.activation.ReaderWriterDataSource;
 import ball.swing.table.MapTableModel;
-import ball.util.BeanMap;
 import ball.util.PropertiesImpl;
 import ball.util.ant.taskdefs.AnnotatedAntTask;
 import ball.util.ant.taskdefs.AntTask;
@@ -26,6 +25,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.Accessors;
+import org.apache.commons.beanutils.BeanMap;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
