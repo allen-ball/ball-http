@@ -5,7 +5,6 @@
  */
 package ball.http;
 
-import ball.util.ClassOrder;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;

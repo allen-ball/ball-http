@@ -6,7 +6,6 @@
 package ball.http;
 
 import ball.activation.ByteArrayDataSource;
-import ball.util.ClassOrder;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
