@@ -19,7 +19,6 @@ import javax.lang.model.element.TypeElement;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import static ball.util.MapUtil.getByKeyToString;
 import static javax.tools.Diagnostic.Kind.ERROR;
 
 /**
@@ -51,7 +50,11 @@ public class ProtocolProcessor extends AbstractAnnotationProcessor {
 
         AnnotationMirror mirror = getAnnotationMirror(element, annotation);
         AnnotationValue charset =
-            getByKeyToString(mirror.getElementValues(), "charset()");
+            mirror.getElementValues().entrySet()
+            .stream()
+            .filter(t -> t.getKey().toString().equals("charset()"))
+            .map(t -> t.getValue())
+            .findFirst().get();
 
         if (charset != null) {
             try {

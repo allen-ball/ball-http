@@ -10,6 +10,7 @@ import ball.annotation.processing.AbstractAnnotationProcessor;
 import ball.annotation.processing.For;
 import ball.http.annotation.Protocol;
 import java.lang.annotation.Annotation;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.processing.Processor;
@@ -29,7 +30,6 @@ import javax.ws.rs.PUT;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import static ball.util.MapUtil.getByKeyToString;
 import static javax.tools.Diagnostic.Kind.ERROR;
 import static lombok.AccessLevel.PROTECTED;
 
@@ -102,8 +102,12 @@ public abstract class ProtocolJSR311AnnotationProcessor
             case 1:
                 AnnotationMirror mirror =
                     getAnnotationMirror(method, annotation);
-                AnnotationValue value =
-                    getByKeyToString(mirror.getElementValues(), "value()");
+                Optional<? extends AnnotationValue> value =
+                    mirror.getElementValues().entrySet()
+                    .stream()
+                    .filter(t -> t.getKey().toString().equals("value()"))
+                    .map(t -> t.getValue())
+                    .findFirst();
                 break;
 
             default:
