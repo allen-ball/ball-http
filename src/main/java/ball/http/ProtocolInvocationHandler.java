@@ -28,7 +28,7 @@ import static java.util.Objects.requireNonNull;
  * processing (and the caller is responsible for consuming any entities).
  * Otherwise, a {@link ProtocolResponseHandler} is provided to the call.
  *
- * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
+ * @author {@link.uri mailto:ball@hcf.dev Allen D. Ball}
  * @version $Revision$
  */
 public class ProtocolInvocationHandler implements InvocationHandler {

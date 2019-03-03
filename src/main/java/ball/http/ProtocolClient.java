@@ -62,7 +62,7 @@ import static java.util.Objects.requireNonNull;
  * {@link ProtocolInvocationHandler} for a description of how
  * {@link HttpRequest}s are generated and executed.
  * </p>
- * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
+ * @author {@link.uri mailto:ball@hcf.dev Allen D. Ball}
  * @version $Revision$
  */
 public abstract class ProtocolClient<P> implements HttpRequestInterceptor,

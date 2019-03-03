@@ -9,7 +9,7 @@
  *
  * @see javax.annotation.processing
  *
- * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
+ * @author {@link.uri mailto:ball@hcf.dev Allen D. Ball}
  */
 @Manifest.Section
 package ball.http.annotation.processing;

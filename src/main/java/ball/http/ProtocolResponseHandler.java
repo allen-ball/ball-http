@@ -33,7 +33,7 @@ import static java.util.Objects.requireNonNull;
  * implementation.  Makes use of {@link ProtocolClient#getUnmarshaller()}
  * and {@link ProtocolClient#getObjectMapper()} for de-serialization.
  *
- * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
+ * @author {@link.uri mailto:ball@hcf.dev Allen D. Ball}
  * @version $Revision$
  */
 public class ProtocolResponseHandler extends AbstractResponseHandler<Object> {

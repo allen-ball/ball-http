@@ -24,7 +24,7 @@ import static javax.tools.Diagnostic.Kind.ERROR;
 /**
  * {@link Protocol} annotation {@link Processor}.
  *
- * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
+ * @author {@link.uri mailto:ball@hcf.dev Allen D. Ball}
  * @version $Revision$
  */
 @ServiceProviderFor({ Processor.class })

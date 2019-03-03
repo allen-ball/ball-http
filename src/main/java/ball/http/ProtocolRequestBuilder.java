@@ -102,7 +102,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  *
  * {@include #PARAMETER_TYPES}
  * </p>
- * @author {@link.uri mailto:ball@iprotium.com Allen D. Ball}
+ * @author {@link.uri mailto:ball@hcf.dev Allen D. Ball}
  * @version $Revision$
  */
 public class ProtocolRequestBuilder {
