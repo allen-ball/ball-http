@@ -1,3 +1,7 @@
+2019-03-27  Allen D. Ball  <ball@sol.local>
+
+	* pom.xml: Released version 2.0.0.
+
 2019-02-07  Allen D. Ball  <ball@sol.local>
 
 	* Removed custom annotations that have a javax.ws.rs counterpart.
