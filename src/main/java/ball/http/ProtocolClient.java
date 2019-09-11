@@ -202,13 +202,15 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor,
      * @return  {@link #protocol()} configured {@link JAXBContext}
      */
     public JAXBContext getJAXBContext() {
-        synchronized(this) {
-            if (jaxb == null) {
-                try {
-                    jaxb =
-                        JAXBContext.newInstance(new Class<?>[] { protocol() });
-                } catch (JAXBException exception) {
-                    throw new IllegalStateException(exception);
+        if (jaxb == null) {
+            synchronized(this) {
+                if (jaxb == null) {
+                    try {
+                        jaxb =
+                            JAXBContext.newInstance(new Class<?>[] { protocol() });
+                    } catch (JAXBException exception) {
+                        throw new IllegalStateException(exception);
+                    }
                 }
             }
         }
@@ -220,14 +222,16 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor,
      * @return  {@link #protocol()} configured {@link Marshaller}
      */
     public Marshaller getMarshaller() {
-        synchronized(this) {
-            if (marshaller == null) {
-                try {
-                    marshaller = getJAXBContext().createMarshaller();
-                    marshaller.setProperty(Marshaller.JAXB_ENCODING,
-                                           getCharset().name());
-                } catch (JAXBException exception) {
-                    throw new IllegalStateException(exception);
+        if (marshaller == null) {
+            synchronized(this) {
+                if (marshaller == null) {
+                    try {
+                        marshaller = getJAXBContext().createMarshaller();
+                        marshaller.setProperty(Marshaller.JAXB_ENCODING,
+                                               getCharset().name());
+                    } catch (JAXBException exception) {
+                        throw new IllegalStateException(exception);
+                    }
                 }
             }
         }
@@ -239,12 +243,14 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor,
      * @return  {@link #protocol()} configured {@link Unmarshaller}
      */
     public Unmarshaller getUnmarshaller() {
-        synchronized(this) {
-            if (unmarshaller == null) {
-                try {
-                    unmarshaller = getJAXBContext().createUnmarshaller();
-                } catch (JAXBException exception) {
-                    throw new IllegalStateException(exception);
+        if (unmarshaller == null) {
+            synchronized(this) {
+                if (unmarshaller == null) {
+                    try {
+                        unmarshaller = getJAXBContext().createUnmarshaller();
+                    } catch (JAXBException exception) {
+                        throw new IllegalStateException(exception);
+                    }
                 }
             }
         }
@@ -256,9 +262,11 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor,
      * @return  {@link #protocol()} configured {@link ObjectMapper}.
      */
     public ObjectMapper getObjectMapper() {
-        synchronized(this) {
-            if (mapper == null) {
-                mapper = new ObjectMapper();
+        if (mapper == null) {
+            synchronized(this) {
+                if (mapper == null) {
+                    mapper = new ObjectMapper();
+                }
             }
         }
 
