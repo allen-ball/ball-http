@@ -1,3 +1,9 @@
+2020-01-18  Allen D. Ball  <ball@hcf.dev>
+
+	* pom.xml:
+	Released version 2.0.3.
+	Use ball:parent:20200117.0.
+
 2020-01-02  Allen D. Ball  <ball@hcf.dev>
 
 	* pom.xml:
