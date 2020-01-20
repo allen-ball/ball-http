@@ -1,7 +1,7 @@
 /*
  * $Id$
  *
- * Copyright 2016 - 2019 Allen D. Ball.  All rights reserved.
+ * Copyright 2016 - 2020 Allen D. Ball.  All rights reserved.
  */
 package ball.http.ant.taskdefs;
 
@@ -126,9 +126,9 @@ public abstract class HTTPTask extends Task
             }
         }
 
-        log(EMPTY);
+        log();
         log(context);
-        log(EMPTY);
+        log();
         log(request);
     }
 
@@ -145,9 +145,9 @@ public abstract class HTTPTask extends Task
             }
         }
 
-        log(EMPTY);
+        log();
         log(context);
-        log(EMPTY);
+        log();
         log(response);
     }
 
@@ -225,7 +225,7 @@ public abstract class HTTPTask extends Task
                     String string = ds.toString();
 
                     if (! isEmpty(string)) {
-                        log(EMPTY);
+                        log();
                         log(string);
                     }
                 } catch (IOException exception) {
