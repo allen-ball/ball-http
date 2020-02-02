@@ -6,6 +6,7 @@
                              http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <name>Web API Client (HTTP) Utilities</name>
+  <description></description>
   <groupId>ball</groupId>
   <artifactId>ball-http</artifactId>
   <version>2.1.0</version>
@@ -16,6 +17,7 @@
     <version>20200130.0</version>
     <relativePath>../ball/parent/pom.xml</relativePath>
   </parent>
+  <inceptionYear>2016</inceptionYear>
   <properties>
     <jre.version>1.8</jre.version>
   </properties>
