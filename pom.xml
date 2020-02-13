@@ -42,12 +42,22 @@
   </properties>
   <dependencies verbose="true">
     <dependency>
+      <groupId>javax.xml.bind</groupId>
+      <artifactId>jaxb-api</artifactId>
+    </dependency>
+    <dependency>
       <groupId>ball</groupId>
       <artifactId>ball-databind</artifactId>
     </dependency>
     <dependency>
       <groupId>ball</groupId>
       <artifactId>ball-util</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.xml.bind</groupId>
+          <artifactId>jaxb-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>commons-beanutils</groupId>
