@@ -58,7 +58,7 @@ public class ProtocolProcessor extends AbstractAnnotationProcessor {
             print(ERROR,
                   element,
                   element.getKind() + " annotated with "
-                  + AT + annotation.getSimpleName()
+                  + "@" + annotation.getSimpleName()
                   + " but is not an INTERFACE");
             break;
         }
@@ -78,7 +78,7 @@ public class ProtocolProcessor extends AbstractAnnotationProcessor {
                 print(ERROR,
                       element,
                       element.getKind() + " annotated with "
-                      + AT + annotation.getSimpleName()
+                      + "@" + annotation.getSimpleName()
                       + " but cannot convert `" + charset.toString()
                       + "' to " + Charset.class.getName());
             }

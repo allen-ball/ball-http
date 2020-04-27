@@ -136,7 +136,7 @@ public abstract class ProtocolJSR311AnnotationProcessor
 
         private String toString(Set<Class<? extends Annotation>> set) {
             return (set.stream()
-                    .map(t -> AT + t.getSimpleName())
+                    .map(t -> "@" + t.getSimpleName())
                     .collect(Collectors.toSet())
                     .toString());
         }
