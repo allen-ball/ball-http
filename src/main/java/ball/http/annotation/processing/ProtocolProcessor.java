@@ -34,6 +34,7 @@ import javax.lang.model.element.TypeElement;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import static javax.lang.model.element.ElementKind.INTERFACE;
 import static javax.tools.Diagnostic.Kind.ERROR;
 
 /**
@@ -55,11 +56,9 @@ public class ProtocolProcessor extends AbstractAnnotationProcessor {
             break;
 
         default:
-            print(ERROR,
-                  element,
-                  element.getKind() + " annotated with "
-                  + "@" + annotation.getSimpleName()
-                  + " but is not an INTERFACE");
+            print(ERROR, element,
+                  "%s annotated with @%s but is not a %s",
+                  element.getKind(), annotation.getSimpleName(), INTERFACE);
             break;
         }
 
@@ -75,12 +74,10 @@ public class ProtocolProcessor extends AbstractAnnotationProcessor {
             try {
                 Charset.forName((String) charset.getValue());
             } catch (Exception exception) {
-                print(ERROR,
-                      element,
-                      element.getKind() + " annotated with "
-                      + "@" + annotation.getSimpleName()
-                      + " but cannot convert `" + charset.toString()
-                      + "' to " + Charset.class.getName());
+                print(ERROR, element,
+                      "%s annotated with @%s but cannot convert '%s' to %s",
+                      element.getKind(), annotation.getSimpleName(),
+                      charset, Charset.class.getName());
             }
         }
     }

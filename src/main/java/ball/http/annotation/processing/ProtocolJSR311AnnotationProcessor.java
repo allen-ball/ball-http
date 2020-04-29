@@ -27,7 +27,6 @@ import ball.http.annotation.Protocol;
 import java.lang.annotation.Annotation;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.AnnotationMirror;
@@ -45,6 +44,7 @@ import javax.ws.rs.PUT;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import static java.util.stream.Collectors.toSet;
 import static javax.tools.Diagnostic.Kind.ERROR;
 import static lombok.AccessLevel.PROTECTED;
 
@@ -107,13 +107,14 @@ public abstract class ProtocolJSR311AnnotationProcessor
             Set<Class<? extends Annotation>> set =
                 getSupportedAnnotationTypeList().stream()
                 .filter(t -> method.getAnnotation(t) != null)
-                .collect(Collectors.toSet());
+                .collect(toSet());
 
             switch (set.size()) {
             case 0:
                 throw new IllegalStateException();
-                /* break; */
-
+                /*
+                 * break;
+                 */
             case 1:
                 AnnotationMirror mirror =
                     getAnnotationMirror(method, annotation);
@@ -126,19 +127,14 @@ public abstract class ProtocolJSR311AnnotationProcessor
                 break;
 
             default:
-                print(ERROR,
-                      method,
-                      method.getKind() + " may only be annotated with one of "
-                      + toString(set));
+                print(ERROR, method,
+                      "%s may only be annotated with one of %s",
+                      method.getKind(),
+                      set.stream()
+                      .map(t -> "@" + t.getSimpleName())
+                      .collect(toSet()));
                 break;
             }
-        }
-
-        private String toString(Set<Class<? extends Annotation>> set) {
-            return (set.stream()
-                    .map(t -> "@" + t.getSimpleName())
-                    .collect(Collectors.toSet())
-                    .toString());
         }
     }
 }
