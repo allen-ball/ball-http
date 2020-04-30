@@ -49,8 +49,7 @@ import static javax.tools.Diagnostic.Kind.ERROR;
 public class ProtocolProcessor extends AbstractAnnotationProcessor {
     @Override
     protected void process(RoundEnvironment env,
-                           TypeElement annotation,
-                           Element element) throws Exception {
+                           TypeElement annotation, Element element) {
         switch (element.getKind()) {
         case INTERFACE:
             break;
@@ -71,13 +70,15 @@ public class ProtocolProcessor extends AbstractAnnotationProcessor {
             .findFirst().get();
 
         if (charset != null) {
+            String string = (String) charset.getValue();
+
             try {
-                Charset.forName((String) charset.getValue());
+                Charset.forName(string);
             } catch (Exception exception) {
                 print(ERROR, element,
                       "%s annotated with @%s but cannot convert '%s' to %s",
                       element.getKind(), annotation.getSimpleName(),
-                      charset, Charset.class.getName());
+                      string, Charset.class.getName());
             }
         }
     }
