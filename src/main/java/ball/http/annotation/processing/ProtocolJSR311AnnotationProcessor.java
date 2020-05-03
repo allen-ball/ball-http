@@ -21,7 +21,7 @@ package ball.http.annotation.processing;
  * ##########################################################################
  */
 import ball.annotation.ServiceProviderFor;
-import ball.annotation.processing.AbstractAnnotationProcessor;
+import ball.annotation.processing.AnnotatedProcessor;
 import ball.annotation.processing.For;
 import ball.http.annotation.Protocol;
 import java.lang.annotation.Annotation;
@@ -57,7 +57,7 @@ import static lombok.AccessLevel.PROTECTED;
  */
 @NoArgsConstructor(access = PROTECTED)
 public abstract class ProtocolJSR311AnnotationProcessor
-                      extends AbstractAnnotationProcessor {
+                      extends AnnotatedProcessor {
     @Override
     public void process(RoundEnvironment roundEnv,
                         TypeElement annotation, Element element) {

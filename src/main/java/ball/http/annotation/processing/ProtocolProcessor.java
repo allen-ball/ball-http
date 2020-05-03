@@ -21,7 +21,7 @@ package ball.http.annotation.processing;
  * ##########################################################################
  */
 import ball.annotation.ServiceProviderFor;
-import ball.annotation.processing.AbstractAnnotationProcessor;
+import ball.annotation.processing.AnnotatedProcessor;
 import ball.annotation.processing.For;
 import ball.http.annotation.Protocol;
 import java.nio.charset.Charset;
@@ -46,7 +46,7 @@ import static javax.tools.Diagnostic.Kind.ERROR;
 @ServiceProviderFor({ Processor.class })
 @For({ Protocol.class })
 @NoArgsConstructor @ToString
-public class ProtocolProcessor extends AbstractAnnotationProcessor {
+public class ProtocolProcessor extends AnnotatedProcessor {
     @Override
     protected void process(RoundEnvironment env,
                            TypeElement annotation, Element element) {
