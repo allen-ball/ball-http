@@ -61,6 +61,8 @@ public abstract class ProtocolJSR311AnnotationProcessor
     @Override
     public void process(RoundEnvironment roundEnv,
                         TypeElement annotation, Element element) {
+        super.process(roundEnv, annotation, element);
+
         switch (element.getKind()) {
         case METHOD:
             TypeElement type = (TypeElement) element.getEnclosingElement();
