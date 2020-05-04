@@ -118,8 +118,7 @@ public abstract class ProtocolJSR311AnnotationProcessor
             case 1:
                 AnnotationMirror mirror =
                     getAnnotationMirror(method, annotation);
-                AnnotationValue value =
-                    getAnnotationElementValue(mirror, "value");
+                AnnotationValue value = getAnnotationValue(mirror, "value");
                 break;
 
             default:
