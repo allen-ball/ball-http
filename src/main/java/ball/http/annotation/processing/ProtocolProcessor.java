@@ -64,24 +64,16 @@ public class ProtocolProcessor extends AnnotatedProcessor {
         }
 
         AnnotationMirror mirror = getAnnotationMirror(element, annotation);
-        AnnotationValue charset =
-            mirror.getElementValues().entrySet()
-            .stream()
-            .filter(t -> t.getKey().toString().equals("charset()"))
-            .map(t -> t.getValue())
-            .findFirst().get();
+        AnnotationValue value = null;
 
-        if (charset != null) {
-            String string = (String) charset.getValue();
-
-            try {
-                Charset.forName(string);
-            } catch (Exception exception) {
-                print(ERROR, element,
-                      "%s annotated with @%s but cannot convert '%s' to %s",
-                      element.getKind(), annotation.getSimpleName(),
-                      string, Charset.class.getName());
-            }
+        try {
+            value = getAnnotationElementValue(mirror, "charset");
+            Charset.forName((String) value.getValue());
+        } catch (Exception exception) {
+            print(ERROR, element,
+                  "@%s: Cannot convert %s to %s: %s",
+                  annotation.getSimpleName(), value, Charset.class.getName(),
+                  exception.getMessage());
         }
     }
 }

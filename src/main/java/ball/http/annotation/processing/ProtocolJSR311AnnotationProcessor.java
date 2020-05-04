@@ -25,7 +25,6 @@ import ball.annotation.processing.AnnotatedProcessor;
 import ball.annotation.processing.For;
 import ball.http.annotation.Protocol;
 import java.lang.annotation.Annotation;
-import java.util.Optional;
 import java.util.Set;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
@@ -119,12 +118,8 @@ public abstract class ProtocolJSR311AnnotationProcessor
             case 1:
                 AnnotationMirror mirror =
                     getAnnotationMirror(method, annotation);
-                Optional<? extends AnnotationValue> value =
-                    mirror.getElementValues().entrySet()
-                    .stream()
-                    .filter(t -> t.getKey().toString().equals("value()"))
-                    .map(t -> t.getValue())
-                    .findFirst();
+                AnnotationValue value =
+                    getAnnotationElementValue(mirror, "value");
                 break;
 
             default:
