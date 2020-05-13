@@ -21,13 +21,11 @@ package ball.http.annotation.processing;
  * ##########################################################################
  */
 import ball.annotation.ServiceProviderFor;
-import ball.annotation.processing.AbstractAnnotationProcessor;
+import ball.annotation.processing.AnnotatedProcessor;
 import ball.annotation.processing.For;
 import ball.http.annotation.Protocol;
 import java.lang.annotation.Annotation;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.AnnotationMirror;
@@ -45,6 +43,7 @@ import javax.ws.rs.PUT;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import static java.util.stream.Collectors.toSet;
 import static javax.tools.Diagnostic.Kind.ERROR;
 import static lombok.AccessLevel.PROTECTED;
 
@@ -57,11 +56,12 @@ import static lombok.AccessLevel.PROTECTED;
  */
 @NoArgsConstructor(access = PROTECTED)
 public abstract class ProtocolJSR311AnnotationProcessor
-                      extends AbstractAnnotationProcessor {
+                      extends AnnotatedProcessor {
     @Override
     public void process(RoundEnvironment roundEnv,
-                        TypeElement annotation,
-                        Element element) throws Exception {
+                        TypeElement annotation, Element element) {
+        super.process(roundEnv, annotation, element);
+
         switch (element.getKind()) {
         case METHOD:
             TypeElement type = (TypeElement) element.getEnclosingElement();
@@ -107,38 +107,29 @@ public abstract class ProtocolJSR311AnnotationProcessor
             Set<Class<? extends Annotation>> set =
                 getSupportedAnnotationTypeList().stream()
                 .filter(t -> method.getAnnotation(t) != null)
-                .collect(Collectors.toSet());
+                .collect(toSet());
 
             switch (set.size()) {
             case 0:
                 throw new IllegalStateException();
-                /* break; */
-
+                /*
+                 * break;
+                 */
             case 1:
                 AnnotationMirror mirror =
                     getAnnotationMirror(method, annotation);
-                Optional<? extends AnnotationValue> value =
-                    mirror.getElementValues().entrySet()
-                    .stream()
-                    .filter(t -> t.getKey().toString().equals("value()"))
-                    .map(t -> t.getValue())
-                    .findFirst();
+                AnnotationValue value = getAnnotationValue(mirror, "value");
                 break;
 
             default:
-                print(ERROR,
-                      method,
-                      method.getKind() + " may only be annotated with one of "
-                      + toString(set));
+                print(ERROR, method,
+                      "%s may only be annotated with one of %s",
+                      method.getKind(),
+                      set.stream()
+                      .map(t -> "@" + t.getSimpleName())
+                      .collect(toSet()));
                 break;
             }
-        }
-
-        private String toString(Set<Class<? extends Annotation>> set) {
-            return (set.stream()
-                    .map(t -> AT + t.getSimpleName())
-                    .collect(Collectors.toSet())
-                    .toString());
         }
     }
 }
