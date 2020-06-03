@@ -20,8 +20,8 @@ package ball.http.annotation;
  * limitations under the License.
  * ##########################################################################
  */
-import ball.annotation.processing.AnnotatedElementMustBe;
 import ball.annotation.processing.AnnotationValueMustConvertTo;
+import ball.annotation.processing.TargetMustBe;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -40,9 +40,9 @@ import static javax.lang.model.element.ElementKind.INTERFACE;
 @Documented
 @Retention(RUNTIME)
 @Target({ TYPE })
-@AnnotatedElementMustBe(INTERFACE)
 @AnnotationValueMustConvertTo(name = "charset",
                               value = Charset.class, method = "forName")
+@TargetMustBe(INTERFACE)
 public @interface Protocol {
     String charset() default "UTF-8";
 }
