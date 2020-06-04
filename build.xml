@@ -42,7 +42,7 @@
           description="--> Invokes &lt;http-delete/&gt; task."
           depends="jar-classes">
     <taskdef classpathref="build.classpath"
-             resource="ball/http/ant/defaults.properties"/>
+             resource="ball/http/ant/antlib.xml"/>
     <http-delete classpathref="build.classpath"/>
   </target>
 
@@ -50,7 +50,7 @@
           description="--> Invokes &lt;http-get/&gt; task."
           depends="jar-classes">
     <taskdef classpathref="build.classpath"
-             resource="ball/http/ant/defaults.properties"/>
+             resource="ball/http/ant/antlib.xml"/>
     <http-get classpathref="build.classpath"/>
   </target>
 
@@ -58,7 +58,7 @@
           description="--> Invokes &lt;http-head/&gt; task."
           depends="jar-classes">
     <taskdef classpathref="build.classpath"
-             resource="ball/http/ant/defaults.properties"/>
+             resource="ball/http/ant/antlib.xml"/>
     <http-head classpathref="build.classpath"/>
   </target>
 
@@ -66,7 +66,7 @@
           description="--> Invokes &lt;http-options/&gt; task."
           depends="jar-classes">
     <taskdef classpathref="build.classpath"
-             resource="ball/http/ant/defaults.properties"/>
+             resource="ball/http/ant/antlib.xml"/>
     <http-options classpathref="build.classpath"/>
   </target>
 
@@ -74,7 +74,7 @@
           description="--> Invokes &lt;http-patch/&gt; task."
           depends="jar-classes">
     <taskdef classpathref="build.classpath"
-             resource="ball/http/ant/defaults.properties"/>
+             resource="ball/http/ant/antlib.xml"/>
     <http-patch classpathref="build.classpath"/>
   </target>
 
@@ -82,7 +82,7 @@
           description="--> Invokes &lt;http-post/&gt; task."
           depends="jar-classes">
     <taskdef classpathref="build.classpath"
-             resource="ball/http/ant/defaults.properties"/>
+             resource="ball/http/ant/antlib.xml"/>
     <http-post classpathref="build.classpath"/>
   </target>
 
@@ -90,7 +90,7 @@
           description="--> Invokes &lt;http-put/&gt; task."
           depends="jar-classes">
     <taskdef classpathref="build.classpath"
-             resource="ball/http/ant/defaults.properties"/>
+             resource="ball/http/ant/antlib.xml"/>
     <http-put classpathref="build.classpath"/>
   </target>
 </project>
