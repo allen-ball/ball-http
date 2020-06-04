@@ -58,6 +58,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.UriBuilder;
+import lombok.ToString;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.apache.http.HttpEntity;
@@ -120,6 +121,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * @author {@link.uri mailto:ball@hcf.dev Allen D. Ball}
  * @version $Revision$
  */
+@ToString
 public class ProtocolRequestBuilder {
 
     /**
@@ -832,9 +834,6 @@ public class ProtocolRequestBuilder {
                              Object argument) throws Throwable {
         body = argument;
     }
-
-    @Override
-    public String toString() { return super.toString(); }
 
     private class Form extends ArrayList<NameValuePair> {
         private static final long serialVersionUID = -738222384949508109L;

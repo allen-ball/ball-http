@@ -35,6 +35,7 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Map;
 import javax.xml.bind.JAXBException;
+import lombok.ToString;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.entity.ContentType;
@@ -51,6 +52,7 @@ import static java.util.Objects.requireNonNull;
  * @author {@link.uri mailto:ball@hcf.dev Allen D. Ball}
  * @version $Revision$
  */
+@ToString
 public class ProtocolResponseHandler extends AbstractResponseHandler<Object> {
     private final ProtocolClient<?> client;
     private final Method method;
@@ -170,7 +172,4 @@ public class ProtocolResponseHandler extends AbstractResponseHandler<Object> {
 
         return object;
     }
-
-    @Override
-    public String toString() { return super.toString(); }
 }

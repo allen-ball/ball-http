@@ -24,6 +24,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import lombok.ToString;
 import org.apache.http.HttpMessage;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -46,6 +47,7 @@ import static java.util.Objects.requireNonNull;
  * @author {@link.uri mailto:ball@hcf.dev Allen D. Ball}
  * @version $Revision$
  */
+@ToString
 public class ProtocolInvocationHandler implements InvocationHandler {
     private final ProtocolClient<?> client;
 
@@ -100,7 +102,4 @@ public class ProtocolInvocationHandler implements InvocationHandler {
 
         return result;
     }
-
-    @Override
-    public String toString() { return super.toString(); }
 }

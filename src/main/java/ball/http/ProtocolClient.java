@@ -32,6 +32,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
+import lombok.ToString;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
@@ -80,6 +81,7 @@ import static java.util.Objects.requireNonNull;
  * @author {@link.uri mailto:ball@hcf.dev Allen D. Ball}
  * @version $Revision$
  */
+@ToString
 public abstract class ProtocolClient<P> implements HttpRequestInterceptor,
                                                    HttpResponseInterceptor {
     private final CloseableHttpClient client;
@@ -297,7 +299,4 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor,
     public void process(HttpResponse response,
                         HttpContext context) throws IOException {
     }
-
-    @Override
-    public String toString() { return super.toString(); }
 }
