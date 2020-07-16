@@ -28,12 +28,12 @@
   <description></description>
   <groupId>ball</groupId>
   <artifactId>ball-http</artifactId>
-  <version>3.0.0</version>
+  <version>3.0.1</version>
   <packaging>jar</packaging>
   <parent>
     <groupId>ball</groupId>
     <artifactId>parent</artifactId>
-    <version>20200612.0</version>
+    <version>20200715.0</version>
     <relativePath>../ball/parent/pom.xml</relativePath>
   </parent>
   <inceptionYear>2016</inceptionYear>
@@ -45,7 +45,7 @@
     </license>
   </licenses>
   <properties>
-    <jre.version>1.8</jre.version>
+    <jse.target>8</jse.target>
   </properties>
   <dependencies verbose="true">
     <dependency>
