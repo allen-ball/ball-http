@@ -1,5 +1,8 @@
 2020-07-23  Allen D. Ball  <ball@hcf.dev>
 
+	* src/main/java/ball/http/ProtocolInvocationHandler.java:
+	Support Java 9 and later.
+
 	* pom.xml: Started development of 3.0.2-SNAPSHOT.
 
 2020-07-15  Allen D. Ball  <ball@hcf.dev>
