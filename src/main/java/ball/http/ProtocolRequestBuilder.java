@@ -33,9 +33,10 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.TreeMap;
+import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.TreeMap;
+import java.util.stream.Stream;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.ConstrainedTo;
@@ -57,6 +58,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriBuilder;
 import lombok.ToString;
 import org.apache.commons.lang3.ClassUtils;
@@ -80,6 +82,8 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.message.BasicNameValuePair;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -138,7 +142,7 @@ public class ProtocolRequestBuilder {
                                              },
                                              t.getParameterTypes()))
         .map(t -> t.getParameterTypes()[0].asSubclass(Annotation.class))
-        .collect(Collectors.toSet());
+        .collect(toSet());
 
     /**
      * Supported method annotations.
@@ -154,7 +158,7 @@ public class ProtocolRequestBuilder {
                                              },
                                              t.getParameterTypes()))
         .map(t -> t.getParameterTypes()[0].asSubclass(Annotation.class))
-        .collect(Collectors.toSet());
+        .collect(toSet());
 
     /**
      * Supported method parameter annotations.
@@ -167,7 +171,7 @@ public class ProtocolRequestBuilder {
         .filter(t -> ClassUtils.isAssignable(new Class<?>[] { t.getParameterTypes()[0], Parameter.class, null },
                                              t.getParameterTypes()))
         .map(t -> t.getParameterTypes()[0].asSubclass(Annotation.class))
-        .collect(Collectors.toSet());
+        .collect(toSet());
 
     /**
      * Supported method parameter types.
@@ -179,12 +183,13 @@ public class ProtocolRequestBuilder {
         .filter(t -> ClassUtils.isAssignable(new Class<?>[] { Parameter.class, null },
                                              t.getParameterTypes()))
         .map(t -> t.getParameterTypes()[1])
-        .collect(Collectors.toSet());
+        .collect(toSet());
 
     private final ProtocolClient<?> client;
     private transient HttpMessage request = null;
     private transient UriBuilder uri = UriBuilder.fromUri(EMPTY);
     private transient TreeMap<String,Object> templateValues = new TreeMap<>();
+    private transient TreeMap<String,String> headers = new TreeMap<>();
     private transient Object body = null;
 
     /**
@@ -212,6 +217,14 @@ public class ProtocolRequestBuilder {
          * Process annotations and arguments
          */
         process(method.getDeclaringClass(), method, argv);
+        /*
+         * Headers
+         */
+        for (Map.Entry<String,String> entry : headers.entrySet()) {
+            if (! request.containsHeader(entry.getKey())) {
+                request.setHeader(entry.getKey(), entry.getValue());
+            }
+        }
         /*
          * URI
          */
@@ -365,7 +378,8 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void type(Consumes annotation, Class<?> type) throws Throwable {
-        throw new UnsupportedOperationException(annotation.toString());
+        headers.put(HttpHeaders.ACCEPT,
+                    Stream.of(annotation.value()).collect(joining(", ")));
     }
 
     /**
@@ -420,7 +434,9 @@ public class ProtocolRequestBuilder {
      */
     protected void method(Consumes annotation,
                           Method method) throws Throwable {
-        throw new UnsupportedOperationException(annotation.toString());
+        request.setHeader(HttpHeaders.ACCEPT,
+                          Stream.of(annotation.value())
+                          .collect(joining(", ")));
     }
 
     /**
