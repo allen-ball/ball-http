@@ -172,4 +172,9 @@ public class ProtocolResponseHandler extends AbstractResponseHandler<Object> {
 
         return object;
     }
+
+    protected Object TEXT_XML(HttpEntity entity) throws ClientProtocolException,
+                                                        IOException {
+        return APPLICATION_XML(entity);
+    }
 }

@@ -28,12 +28,12 @@
   <description></description>
   <groupId>ball</groupId>
   <artifactId>ball-http</artifactId>
-  <version>3.0.2</version>
+  <version>3.1.0</version>
   <packaging>jar</packaging>
   <parent>
     <groupId>ball</groupId>
     <artifactId>parent</artifactId>
-    <version>20200903.0</version>
+    <version>20201215.0</version>
     <relativePath>../ball/parent/pom.xml</relativePath>
   </parent>
   <inceptionYear>2016</inceptionYear>
@@ -49,22 +49,12 @@
   </properties>
   <dependencies verbose="true">
     <dependency>
-      <groupId>javax.xml.bind</groupId>
-      <artifactId>jaxb-api</artifactId>
-    </dependency>
-    <dependency>
       <groupId>ball</groupId>
       <artifactId>ball-databind</artifactId>
     </dependency>
     <dependency>
       <groupId>ball</groupId>
       <artifactId>ball-util</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>javax.xml.bind</groupId>
-          <artifactId>jaxb-api</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>commons-beanutils</groupId>
