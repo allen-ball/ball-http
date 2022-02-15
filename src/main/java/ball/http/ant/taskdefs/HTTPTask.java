@@ -2,10 +2,8 @@ package ball.http.ant.taskdefs;
 /*-
  * ##########################################################################
  * Web API Client (HTTP) Utilities
- * $Id$
- * $HeadURL$
  * %%
- * Copyright (C) 2016 - 2021 Allen D. Ball
+ * Copyright (C) 2016 - 2022 Allen D. Ball
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,15 +80,10 @@ import static org.apache.tools.ant.Project.toBoolean;
  * {@ant.task}
  *
  * @author {@link.uri mailto:ball@hcf.dev Allen D. Ball}
- * @version $Revision$
  */
 @NoArgsConstructor(access = PROTECTED)
-public abstract class HTTPTask extends Task
-                               implements AnnotatedAntTask,
-                                          ClasspathDelegateAntTask,
-                                          ConfigurableAntTask,
-                                          HttpRequestInterceptor,
-                                          HttpResponseInterceptor {
+public abstract class HTTPTask extends Task implements AnnotatedAntTask, ClasspathDelegateAntTask, ConfigurableAntTask,
+                                                       HttpRequestInterceptor, HttpResponseInterceptor {
     private static final String DOT = ".";
 
     private final HttpClientBuilder builder =
@@ -125,17 +118,14 @@ public abstract class HTTPTask extends Task
     protected HttpClientBuilder builder() { return builder; }
 
     @Override
-    public void process(HttpRequest request,
-                        HttpContext context) throws IOException {
+    public void process(HttpRequest request, HttpContext context) throws IOException {
         if (request instanceof HttpEntityEnclosingRequest) {
-            HttpEntity entity =
-                ((HttpEntityEnclosingRequest) request).getEntity();
+            HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
 
             if (entity != null) {
                 if (! entity.isRepeatable()) {
                     if (isBuffer()) {
-                        ((HttpEntityEnclosingRequest) request)
-                            .setEntity(new BufferedHttpEntity(entity));
+                        ((HttpEntityEnclosingRequest) request).setEntity(new BufferedHttpEntity(entity));
                     }
                 }
             }
@@ -148,8 +138,7 @@ public abstract class HTTPTask extends Task
     }
 
     @Override
-    public void process(HttpResponse response,
-                        HttpContext context) throws IOException {
+    public void process(HttpResponse response, HttpContext context) throws IOException {
         HttpEntity entity = response.getEntity();
 
         if (entity != null) {
@@ -197,9 +186,7 @@ public abstract class HTTPTask extends Task
     }
 
     private String getContentType(HttpMessage message) {
-        return (message.containsHeader(CONTENT_TYPE)
-                    ? message.getFirstHeader(CONTENT_TYPE).getValue()
-                    : null);
+        return (message.containsHeader(CONTENT_TYPE) ? message.getFirstHeader(CONTENT_TYPE).getValue() : null);
     }
 
     private HttpEntity getHttpEntity(HttpMessage message) {
@@ -230,8 +217,7 @@ public abstract class HTTPTask extends Task
     protected void log(String type, HttpEntity entity) {
         if (entity != null) {
             if (entity.isRepeatable()) {
-                ReaderWriterDataSource ds =
-                    new ReaderWriterDataSource(null, type);
+                ReaderWriterDataSource ds = new ReaderWriterDataSource(null, type);
 
                 try (OutputStream out = ds.getOutputStream()) {
                     entity.writeTo(out);
@@ -301,9 +287,7 @@ public abstract class HTTPTask extends Task
 
             String method = getClass().getSimpleName().toUpperCase();
 
-            properties =
-                getPrefixedProperties(method + DOT,
-                                      getProject().getProperties());
+            properties = getPrefixedProperties(method + DOT, getProject().getProperties());
 
             try {
                 if (properties.containsKey("uri")) {
@@ -312,11 +296,8 @@ public abstract class HTTPTask extends Task
 
                 properties.configure(builder);
 
-                for (Map.Entry<?,?> entry :
-                         getPrefixedProperties("parameter" + DOT, properties)
-                         .entrySet()) {
-                    builder.addParameter(entry.getKey().toString(),
-                                         entry.getValue().toString());
+                for (Map.Entry<?,?> entry : getPrefixedProperties("parameter" + DOT, properties).entrySet()) {
+                    builder.addParameter(entry.getKey().toString(), entry.getValue().toString());
                 }
             } catch (BuildException exception) {
                 throw exception;
@@ -326,8 +307,7 @@ public abstract class HTTPTask extends Task
             }
         }
 
-        private PropertiesImpl getPrefixedProperties(String prefix,
-                                                     Map<?,?> map) {
+        private PropertiesImpl getPrefixedProperties(String prefix, Map<?,?> map) {
             PropertiesImpl properties = new PropertiesImpl();
 
             for (Map.Entry<?,?> entry : map.entrySet()) {
@@ -335,8 +315,7 @@ public abstract class HTTPTask extends Task
                 String string = (key != null) ? key.toString() : null;
 
                 if ((! isEmpty(string)) && string.startsWith(prefix)) {
-                    properties.put(string.substring(prefix.length()),
-                                   entry.getValue());
+                    properties.put(string.substring(prefix.length()), entry.getValue());
                 }
             }
 
@@ -362,9 +341,7 @@ public abstract class HTTPTask extends Task
         protected void configure(HttpUriRequest request) throws Exception {
             ((HttpRequestBase) request).setURI(builder.build());
 
-            addHeaders(request,
-                       getPrefixedProperties("header" + DOT, properties)
-                       .entrySet());
+            addHeaders(request, getPrefixedProperties("header" + DOT, properties).entrySet());
             addHeaders(request, headers);
 
             if (! isEmpty(getContent())) {
@@ -374,19 +351,15 @@ public abstract class HTTPTask extends Task
             }
         }
 
-        private void addHeaders(HttpRequest request,
-                                Iterable<? extends Map.Entry<?,?>> iterable) {
+        private void addHeaders(HttpRequest request, Iterable<? extends Map.Entry<?,?>> iterable) {
             for (Map.Entry<?,?> entry : iterable) {
-                request.addHeader(entry.getKey().toString(),
-                                  entry.getValue().toString());
+                request.addHeader(entry.getKey().toString(), entry.getValue().toString());
             }
         }
 
-        private void setEntity(HttpUriRequest request,
-                               String content) throws Exception {
+        private void setEntity(HttpUriRequest request, String content) throws Exception {
             if (! isEmpty(content)) {
-                ((HttpEntityEnclosingRequest) request)
-                    .setEntity(new StringEntity(content));
+                ((HttpEntityEnclosingRequest) request).setEntity(new StringEntity(content));
             }
         }
 
@@ -505,7 +478,6 @@ public abstract class HTTPTask extends Task
      * {@link NameValuePair}.
      */
     @NoArgsConstructor @ToString
-    public static class NameValuePairImpl extends StringAttributeType
-                                          implements NameValuePair {
+    public static class NameValuePairImpl extends StringAttributeType implements NameValuePair {
     }
 }

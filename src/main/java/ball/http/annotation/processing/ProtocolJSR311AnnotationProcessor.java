@@ -2,10 +2,8 @@ package ball.http.annotation.processing;
 /*-
  * ##########################################################################
  * Web API Client (HTTP) Utilities
- * $Id$
- * $HeadURL$
  * %%
- * Copyright (C) 2016 - 2021 Allen D. Ball
+ * Copyright (C) 2016 - 2022 Allen D. Ball
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,14 +50,11 @@ import static lombok.AccessLevel.PROTECTED;
  * {@link Processor} for {@link Protocol} interface methods.
  *
  * @author {@link.uri mailto:ball@hcf.dev Allen D. Ball}
- * @version $Revision$
  */
 @NoArgsConstructor(access = PROTECTED)
-public abstract class ProtocolJSR311AnnotationProcessor
-                      extends AnnotatedProcessor {
+public abstract class ProtocolJSR311AnnotationProcessor extends AnnotatedProcessor {
     @Override
-    public void process(RoundEnvironment roundEnv,
-                        TypeElement annotation, Element element) {
+    public void process(RoundEnvironment roundEnv, TypeElement annotation, Element element) {
         super.process(roundEnv, annotation, element);
 
         switch (element.getKind()) {
@@ -95,15 +90,11 @@ public abstract class ProtocolJSR311AnnotationProcessor
      * {@link Processor}.
      */
     @ServiceProviderFor({ Processor.class })
-    @For({
-            DELETE.class, GET.class, HEAD.class, OPTIONS.class,
-                PATCH.class, POST.class, PUT.class
-          })
+    @For({ DELETE.class, GET.class, HEAD.class, OPTIONS.class, PATCH.class, POST.class, PUT.class })
     @NoArgsConstructor @ToString
     public static class Method extends ProtocolJSR311AnnotationProcessor {
         @Override
-        protected void check(TypeElement annotation,
-                             TypeElement type, ExecutableElement method) {
+        protected void check(TypeElement annotation, TypeElement type, ExecutableElement method) {
             Set<Class<? extends Annotation>> set =
                 getSupportedAnnotationTypeList().stream()
                 .filter(t -> method.getAnnotation(t) != null)
@@ -116,18 +107,14 @@ public abstract class ProtocolJSR311AnnotationProcessor
                  * break;
                  */
             case 1:
-                AnnotationMirror mirror =
-                    getAnnotationMirror(method, annotation);
+                AnnotationMirror mirror = getAnnotationMirror(method, annotation);
                 AnnotationValue value = getAnnotationValue(mirror, "value");
                 break;
 
             default:
                 print(ERROR, method,
                       "%s may only be annotated with one of %s",
-                      method.getKind(),
-                      set.stream()
-                      .map(t -> "@" + t.getSimpleName())
-                      .collect(toSet()));
+                      method.getKind(), set.stream().map(t -> "@" + t.getSimpleName()).collect(toSet()));
                 break;
             }
         }

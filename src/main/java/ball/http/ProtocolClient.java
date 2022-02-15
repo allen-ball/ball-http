@@ -2,10 +2,8 @@ package ball.http;
 /*-
  * ##########################################################################
  * Web API Client (HTTP) Utilities
- * $Id$
- * $HeadURL$
  * %%
- * Copyright (C) 2016 - 2021 Allen D. Ball
+ * Copyright (C) 2016 - 2022 Allen D. Ball
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,11 +77,9 @@ import static java.util.Objects.requireNonNull;
  * {@link HttpRequest}s are generated and executed.
  * </p>
  * @author {@link.uri mailto:ball@hcf.dev Allen D. Ball}
- * @version $Revision$
  */
 @ToString
-public abstract class ProtocolClient<P> implements HttpRequestInterceptor,
-                                                   HttpResponseInterceptor {
+public abstract class ProtocolClient<P> implements HttpRequestInterceptor, HttpResponseInterceptor {
     private final CloseableHttpClient client;
     private final HttpCoreContext context;
     private final Class<? extends P> protocol;
@@ -178,9 +174,7 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor,
     public Charset getCharset() {
         synchronized (this) {
             if (charset == null) {
-                String name =
-                    (String) getDefaultedValueOf(protocol(),
-                                                 Protocol.class, "charset");
+                String name = (String) getDefaultedValueOf(protocol(), Protocol.class, "charset");
 
                 charset = Charset.forName(name);
             }
@@ -189,9 +183,7 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor,
         return charset;
     }
 
-    private Object getDefaultedValueOf(AnnotatedElement element,
-                                       Class<? extends Annotation> type,
-                                       String name) {
+    private Object getDefaultedValueOf(AnnotatedElement element, Class<? extends Annotation> type, String name) {
         Object object = null;
 
         try {
@@ -223,8 +215,7 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor,
             synchronized(this) {
                 if (jaxb == null) {
                     try {
-                        jaxb =
-                            JAXBContext.newInstance(new Class<?>[] { protocol() });
+                        jaxb = JAXBContext.newInstance(new Class<?>[] { protocol() });
                     } catch (JAXBException exception) {
                         throw new IllegalStateException(exception);
                     }
@@ -244,8 +235,7 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor,
                 if (marshaller == null) {
                     try {
                         marshaller = getJAXBContext().createMarshaller();
-                        marshaller.setProperty(Marshaller.JAXB_ENCODING,
-                                               getCharset().name());
+                        marshaller.setProperty(Marshaller.JAXB_ENCODING, getCharset().name());
                     } catch (JAXBException exception) {
                         throw new IllegalStateException(exception);
                     }
@@ -291,12 +281,10 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor,
     }
 
     @Override
-    public void process(HttpRequest request,
-                        HttpContext context) throws IOException {
+    public void process(HttpRequest request, HttpContext context) throws IOException {
     }
 
     @Override
-    public void process(HttpResponse response,
-                        HttpContext context) throws IOException {
+    public void process(HttpResponse response, HttpContext context) throws IOException {
     }
 }

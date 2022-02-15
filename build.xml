@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   ##########################################################################
-  $Id$
-  $HeadURL$
   %%
   Copyright (C) 2016 - 2022 Allen D. Ball
   %%
@@ -26,8 +24,6 @@
     ball.http
     -------------------------------
     Web API Client (HTTP) Utilities
-
-    $Id$
   </description>
 
   <resolver:resolve>

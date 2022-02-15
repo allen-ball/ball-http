@@ -2,10 +2,8 @@ package ball.http;
 /*-
  * ##########################################################################
  * Web API Client (HTTP) Utilities
- * $Id$
- * $HeadURL$
  * %%
- * Copyright (C) 2016 - 2021 Allen D. Ball
+ * Copyright (C) 2016 - 2022 Allen D. Ball
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +48,6 @@ import static java.util.Objects.requireNonNull;
  * and {@link ProtocolClient#getObjectMapper()} for de-serialization.
  *
  * @author {@link.uri mailto:ball@hcf.dev Allen D. Ball}
- * @version $Revision$
  */
 @ToString
 public class ProtocolResponseHandler extends AbstractResponseHandler<Object> {
@@ -63,8 +60,7 @@ public class ProtocolResponseHandler extends AbstractResponseHandler<Object> {
      * @param   client          The {@link ProtocolClient}.
      * @param   method          The protocol {@link Method}.
      */
-    protected ProtocolResponseHandler(ProtocolClient<?> client,
-                                      Method method) {
+    protected ProtocolResponseHandler(ProtocolClient<?> client, Method method) {
         super();
 
         this.client = requireNonNull(client, "client");
@@ -72,8 +68,7 @@ public class ProtocolResponseHandler extends AbstractResponseHandler<Object> {
     }
 
     @Override
-    public Object handleEntity(HttpEntity entity) throws ClientProtocolException,
-                                                         IOException {
+    public Object handleEntity(HttpEntity entity) throws ClientProtocolException, IOException {
         Object object = null;
 
         try {
@@ -100,13 +95,11 @@ public class ProtocolResponseHandler extends AbstractResponseHandler<Object> {
         return method.getReturnType().cast(object);
     }
 
-    protected Object APPLICATION_JSON(HttpEntity entity) throws ClientProtocolException,
-                                                                IOException {
+    protected Object APPLICATION_JSON(HttpEntity entity) throws ClientProtocolException, IOException {
         Object object = null;
         ObjectMapper om = client.getObjectMapper();
         TypeFactory factory = om.getTypeFactory();
-        JavaType type =
-            getJavaTypeFrom(factory, method.getGenericReturnType());
+        JavaType type = getJavaTypeFrom(factory, method.getGenericReturnType());
 
         try (InputStream in = entity.getContent()) {
             object = om.readValue(in, type);
@@ -131,37 +124,32 @@ public class ProtocolResponseHandler extends AbstractResponseHandler<Object> {
         return (java != null) ? java : factory.constructType(type);
     }
 
-    private JavaType getJavaTypeFrom(TypeFactory factory,
-                                     GenericArrayType type) {
+    private JavaType getJavaTypeFrom(TypeFactory factory, GenericArrayType type) {
         Type element = type.getGenericComponentType();
 
         return factory.constructArrayType(getJavaTypeFrom(factory, element));
     }
 
-    private JavaType getJavaTypeFrom(TypeFactory factory,
-                                     ParameterizedType type) {
+    private JavaType getJavaTypeFrom(TypeFactory factory, ParameterizedType type) {
         JavaType java = null;
         Class<?> raw = (Class<?>) type.getRawType();
         Type[] arguments = type.getActualTypeArguments();
 
         if (Collection.class.isAssignableFrom(raw)) {
             java =
-                factory
-                .constructCollectionType(raw.asSubclass(Collection.class),
-                                         getJavaTypeFrom(factory, arguments[0]));
+                factory.constructCollectionType(raw.asSubclass(Collection.class),
+                                                getJavaTypeFrom(factory, arguments[0]));
         } else if (Map.class.isAssignableFrom(raw)) {
             java =
-                factory
-                .constructMapType(raw.asSubclass(Map.class),
-                                  getJavaTypeFrom(factory, arguments[0]),
-                                  getJavaTypeFrom(factory, arguments[1]));
+                factory.constructMapType(raw.asSubclass(Map.class),
+                                         getJavaTypeFrom(factory, arguments[0]),
+                                         getJavaTypeFrom(factory, arguments[1]));
         }
 
         return (java != null) ? java : factory.constructType(type);
     }
 
-    protected Object APPLICATION_XML(HttpEntity entity) throws ClientProtocolException,
-                                                               IOException {
+    protected Object APPLICATION_XML(HttpEntity entity) throws ClientProtocolException, IOException {
         Object object = null;
 
         try (InputStream in = entity.getContent()) {
@@ -173,8 +161,7 @@ public class ProtocolResponseHandler extends AbstractResponseHandler<Object> {
         return object;
     }
 
-    protected Object TEXT_XML(HttpEntity entity) throws ClientProtocolException,
-                                                        IOException {
+    protected Object TEXT_XML(HttpEntity entity) throws ClientProtocolException, IOException {
         return APPLICATION_XML(entity);
     }
 }
