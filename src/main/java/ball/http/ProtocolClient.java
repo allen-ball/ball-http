@@ -18,29 +18,25 @@ package ball.http;
  * limitations under the License.
  * ##########################################################################
  */
-import ball.http.annotation.Protocol;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.nio.charset.Charset;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import lombok.ToString;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpRequestInterceptor;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpResponseInterceptor;
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.protocol.HttpCoreContext;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.core5.http.EntityDetails;
+import org.apache.hc.core5.http.HttpRequest;
+import org.apache.hc.core5.http.HttpRequestInterceptor;
+import org.apache.hc.core5.http.HttpResponse;
+import org.apache.hc.core5.http.HttpResponseInterceptor;
+import org.apache.hc.core5.http.protocol.HttpContext;
+import org.apache.hc.core5.http.protocol.HttpCoreContext;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -51,7 +47,8 @@ import static java.util.Objects.requireNonNull;
  * This class provides:
  * <ol>
  *   <li value="1">
- *     {@link HttpClient} ({@link #client()})
+ *     {@link org.apache.hc.client5.http.classic.HttpClient}
+ *     ({@link #client()})
  *   </li>
  *   <li value="2">
  *     {@link HttpContext} ({@link #context()})
@@ -63,13 +60,14 @@ import static java.util.Objects.requireNonNull;
  *     {@link.this} implements {@link HttpRequestInterceptor}
  *     and {@link HttpResponseInterceptor} which are configured into
  *     {@link HttpClientBuilder}; subclasses can override
- *     {@link #process(HttpRequest,HttpContext)} and
- *     {@link #process(HttpResponse,HttpContext)}
+ *     {@link #process(HttpRequest,EntityDetails,HttpContext)} and
+ *     {@link #process(HttpResponse,EntityDetails,HttpContext)}
  *   </li>
  * </ol>
  * <p>
  * See the {@link ProtocolRequestBuilder} for the supported protocol
- * interface {@link Annotation}s and method parameter types.
+ * interface {@link java.lang.annotation.Annotation}s and method parameter
+ * types.
  * </p>
  * <p>
  * See {@link ProtocolRequestBuilder} and
@@ -84,12 +82,6 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor, HttpR
     private final HttpCoreContext context;
     private final Class<? extends P> protocol;
     private final Object proxy;
-
-    /**
-     * Field exposed for subclass initialization;
-     * see {@link #getCharset()}.
-     */
-    protected transient Charset charset = null;
 
     /**
      * Field exposed for subclass initialization;
@@ -125,20 +117,17 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor, HttpR
      *                          {@code null}).
      * @param   protocol        The protocol {@link Class}.
      */
-    protected ProtocolClient(HttpClientBuilder builder,
-                             HttpCoreContext context,
-                             Class<? extends P> protocol) {
+    protected ProtocolClient(HttpClientBuilder builder, HttpCoreContext context, Class<? extends P> protocol) {
         this.client =
             builder
-            .addInterceptorLast((HttpRequestInterceptor) this)
-            .addInterceptorLast((HttpResponseInterceptor) this)
+            .addRequestInterceptorLast(this)
+            .addResponseInterceptorLast(this)
             .build();
         this.context = (context != null) ? context : HttpCoreContext.create();
         this.protocol = requireNonNull(protocol, "protocol");
         this.proxy =
             Proxy.newProxyInstance(protocol.getClassLoader(),
-                                   new Class<?>[] { protocol },
-                                   new ProtocolInvocationHandler(this));
+                                   new Class<?>[] { protocol }, new ProtocolInvocationHandler(this));
     }
 
     /**
@@ -167,21 +156,11 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor, HttpR
     public ProtocolInvocationHandler handler() {
         return (ProtocolInvocationHandler) Proxy.getInvocationHandler(proxy());
     }
-
-    /**
-     * @return  {@link #protocol()} configured {@link Charset}
-     */
-    public Charset getCharset() {
-        synchronized (this) {
-            if (charset == null) {
-                String name = (String) getDefaultedValueOf(protocol(), Protocol.class, "charset");
-
-                charset = Charset.forName(name);
-            }
-        }
-
-        return charset;
-    }
+/*
+import ball.http.annotation.Protocol;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
 
     private Object getDefaultedValueOf(AnnotatedElement element, Class<? extends Annotation> type, String name) {
         Object object = null;
@@ -206,7 +185,7 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor, HttpR
 
         return object;
     }
-
+*/
     /**
      * @return  {@link #protocol()} configured {@link JAXBContext}
      */
@@ -235,7 +214,7 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor, HttpR
                 if (marshaller == null) {
                     try {
                         marshaller = getJAXBContext().createMarshaller();
-                        marshaller.setProperty(Marshaller.JAXB_ENCODING, getCharset().name());
+                        marshaller.setProperty(Marshaller.JAXB_ENCODING, UTF_8);
                     } catch (JAXBException exception) {
                         throw new IllegalStateException(exception);
                     }
@@ -281,10 +260,10 @@ public abstract class ProtocolClient<P> implements HttpRequestInterceptor, HttpR
     }
 
     @Override
-    public void process(HttpRequest request, HttpContext context) throws IOException {
+    public void process(HttpRequest request, EntityDetails details, HttpContext context) throws IOException {
     }
 
     @Override
-    public void process(HttpResponse response, HttpContext context) throws IOException {
+    public void process(HttpResponse response, EntityDetails details, HttpContext context) throws IOException {
     }
 }

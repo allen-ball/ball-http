@@ -1,5 +1,5 @@
 /**
- * See {@link org.apache.http.client}.
+ * See {@link org.apache.hc.client5.http.classic}.
  *
  * {@pom.coordinates}
  *

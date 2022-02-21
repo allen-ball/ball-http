@@ -19,7 +19,6 @@ package ball.http;
  * ##########################################################################
  */
 import ball.activation.ByteArrayDataSource;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -30,7 +29,6 @@ import java.lang.reflect.Parameter;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -61,23 +59,22 @@ import javax.ws.rs.core.UriBuilder;
 import lombok.ToString;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpMessage;
-import org.apache.http.HttpRequest;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
-import org.apache.http.client.methods.HttpOptions;
-import org.apache.http.client.methods.HttpPatch;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.entity.AbstractHttpEntity;
-import org.apache.http.entity.ContentType;
-import org.apache.http.message.BasicNameValuePair;
+import org.apache.hc.client5.http.classic.methods.HttpDelete;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpHead;
+import org.apache.hc.client5.http.classic.methods.HttpOptions;
+import org.apache.hc.client5.http.classic.methods.HttpPatch;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpPut;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
+import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpEntityContainer;
+import org.apache.hc.core5.http.HttpMessage;
+import org.apache.hc.core5.http.NameValuePair;
+import org.apache.hc.core5.http.io.entity.AbstractHttpEntity;
+import org.apache.hc.core5.http.message.BasicNameValuePair;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -88,16 +85,17 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * <p>
- * {@link HttpRequest} builder for {@link ProtocolClient#protocol()}.  See
- * the {@code type(Annotation,Class)}, {@code method(Annotation,Method)},
- * {@code parameter(Annotation,Parameter,...)},
- * and {@code parameter(Parameter,...)} methods for the supported protocol
+ * {@link org.apache.hc.core5.http.HttpRequest} builder for
+ * {@link ProtocolClient#protocol()}.  See the {@code type(Annotation,Class)},
+ * {@code method(Annotation,Method)},
+ * {@code parameter(Annotation,Parameter,...)}, and
+ * {@code parameter(Parameter,...)}  methods for the supported protocol
  * interface, method, and method parameter {@link Annotation}s and types.
  * </p>
  * <p>
  * Protocol API authors should consider designing protocol methods to throw
- * {@link org.apache.http.client.HttpResponseException},
- * {@link org.apache.http.client.ClientProtocolException}, and
+ * {@link org.apache.hc.client5.http.HttpResponseException},
+ * {@link org.apache.hc.client5.http.ClientProtocolException}, and
  * {@link java.io.IOException}.
  * </p>
  * <p>
@@ -192,8 +190,8 @@ public class ProtocolRequestBuilder {
     }
 
     /**
-     * Build a {@link HttpRequest} ({@link HttpMessage}) from the protocol
-     * interface {@link Method}.
+     * Build a {@link org.apache.hc.core5.http.HttpRequest}
+     * ({@link HttpMessage}) from the protocol interface {@link Method}.
      *
      * @param   method          The interface {@link Method}.
      * @param   argv            The caller's arguments.
@@ -218,8 +216,8 @@ public class ProtocolRequestBuilder {
         /*
          * URI
          */
-        if (request instanceof HttpRequestBase) {
-            ((HttpRequestBase) request).setURI(uri.resolveTemplates(templateValues).build());
+        if (request instanceof HttpUriRequestBase) {
+            ((HttpUriRequestBase) request).setUri(uri.resolveTemplates(templateValues).build());
         }
         /*
          * Body
@@ -229,13 +227,13 @@ public class ProtocolRequestBuilder {
         if (body instanceof HttpEntity) {
             entity = (HttpEntity) body;
         } else if (body instanceof Form) {
-            entity = new UrlEncodedFormEntity((Form) body, client.getCharset());
+            entity = new UrlEncodedFormEntity((Form) body);
         } else if (body != null) {
             entity = new JSONHttpEntity(body);
         }
 
         if (entity != null) {
-            ((HttpEntityEnclosingRequestBase) request).setEntity(entity);
+            ((HttpEntityContainer) request).setEntity(entity);
         }
 
         return request;
@@ -435,7 +433,7 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void method(DELETE annotation, Method method) throws Throwable {
-        request = new HttpDelete();
+        request = new HttpDelete(EMPTY);
     }
 
     /**
@@ -461,7 +459,7 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void method(GET annotation, Method method) throws Throwable {
-        request = new HttpGet();
+        request = new HttpGet(EMPTY);
     }
 
     /**
@@ -474,7 +472,7 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void method(HEAD annotation, Method method) throws Throwable {
-        request = new HttpHead();
+        request = new HttpHead(EMPTY);
     }
 
     /**
@@ -513,7 +511,7 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void method(OPTIONS annotation, Method method) throws Throwable {
-        request = new HttpOptions();
+        request = new HttpOptions(EMPTY);
     }
 
     /**
@@ -526,7 +524,7 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void method(PATCH annotation, Method method) throws Throwable {
-        request = new HttpPatch();
+        request = new HttpPatch(EMPTY);
     }
 
     /**
@@ -578,7 +576,7 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void method(POST annotation, Method method) throws Throwable {
-        request = new HttpPost();
+        request = new HttpPost(EMPTY);
     }
 
     /**
@@ -604,7 +602,7 @@ public class ProtocolRequestBuilder {
      *                          configured.
      */
     protected void method(PUT annotation, Method method) throws Throwable {
-        request = new HttpPut();
+        request = new HttpPut(EMPTY);
     }
 
     /**
@@ -799,12 +797,10 @@ public class ProtocolRequestBuilder {
     private abstract class HttpEntityImpl extends AbstractHttpEntity {
         protected final Object object;
 
-        protected HttpEntityImpl(Object object) {
-            super();
+        protected HttpEntityImpl(ContentType type, Object object) {
+            super(type, null, false);
 
             this.object = requireNonNull(object, "object");
-
-            setChunked(false);
         }
 
         @Override
@@ -826,13 +822,14 @@ public class ProtocolRequestBuilder {
 
         @Override
         public boolean isStreaming() { return false; }
+
+        @Override
+        public void close() { }
     }
 
     private class JSONHttpEntity extends HttpEntityImpl {
         public JSONHttpEntity(Object object) {
-            super(object);
-
-            setContentType(ContentType.APPLICATION_JSON.withCharset(client.getCharset()).toString());
+            super(ContentType.APPLICATION_JSON, object);
         }
 
         @Override

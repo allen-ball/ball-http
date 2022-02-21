@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -34,23 +33,26 @@ import java.util.Collection;
 import java.util.Map;
 import javax.xml.bind.JAXBException;
 import lombok.ToString;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.entity.ContentType;
-import org.apache.http.impl.client.AbstractResponseHandler;
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.client5.http.ClientProtocolException;
+import org.apache.hc.core5.http.ClassicHttpResponse;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpEntityContainer;
+import org.apache.hc.core5.http.HttpException;
+import org.apache.hc.core5.http.io.HttpClientResponseHandler;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * {@link ProtocolClient} {@link org.apache.http.client.ResponseHandler}
- * implementation.  Makes use of {@link ProtocolClient#getUnmarshaller()}
- * and {@link ProtocolClient#getObjectMapper()} for de-serialization.
+ * {@link ProtocolClient} {@link HttpClientResponseHandler} implementation.
+ * Makes use of {@link ProtocolClient#getUnmarshaller()} and
+ * {@link ProtocolClient#getObjectMapper()} for de-serialization.
  *
  * @author {@link.uri mailto:ball@hcf.dev Allen D. Ball}
  */
 @ToString
-public class ProtocolResponseHandler extends AbstractResponseHandler<Object> {
+public class ProtocolResponseHandler implements HttpClientResponseHandler<Object> {
     private final ProtocolClient<?> client;
     private final Method method;
 
@@ -68,27 +70,32 @@ public class ProtocolResponseHandler extends AbstractResponseHandler<Object> {
     }
 
     @Override
-    public Object handleEntity(HttpEntity entity) throws ClientProtocolException, IOException {
+    public Object handleResponse(ClassicHttpResponse response) throws HttpException, IOException {
         Object object = null;
 
-        try {
-            String type =
-                ContentType.getLenientOrDefault(entity).getMimeType()
-                .replaceAll("[^\\p{Alnum}]", "_").toUpperCase();
+        if (response instanceof HttpEntityContainer) {
+            HttpEntity entity = ((HttpEntityContainer) response).getEntity();
 
-            object =
-                getClass()
-                .getDeclaredMethod(type, HttpEntity.class)
-                .invoke(this, entity);
-        } catch (NoSuchMethodException exception) {
-            object = EntityUtils.toString(entity);
-        } catch (Exception exception) {
-            if (exception instanceof ClientProtocolException) {
-                throw (ClientProtocolException) exception;
-            } else if (exception instanceof IOException) {
-                throw (IOException) exception;
-            } else {
-                throw new ClientProtocolException(exception);
+            try {
+                String name =
+                    ContentType.parseLenient(entity.getContentType())
+                    .getMimeType()
+                    .replaceAll("[^\\p{Alnum}]", "_").toUpperCase();
+
+                object =
+                    getClass()
+                    .getDeclaredMethod(name, HttpEntity.class)
+                    .invoke(this, entity);
+            } catch (NoSuchMethodException exception) {
+                object = EntityUtils.toString(entity);
+            } catch (Exception exception) {
+                if (exception instanceof HttpException) {
+                    throw (HttpException) exception;
+                } else if (exception instanceof IOException) {
+                    throw (IOException) exception;
+                } else {
+                    throw new ClientProtocolException(exception);
+                }
             }
         }
 

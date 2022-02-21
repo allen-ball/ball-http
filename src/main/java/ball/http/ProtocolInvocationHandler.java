@@ -23,9 +23,9 @@ import java.lang.reflect.Method;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
-import org.apache.http.HttpMessage;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
+import org.apache.hc.core5.http.HttpMessage;
+import org.apache.hc.core5.http.HttpResponse;
 
 /**
  * Protocol {@link java.lang.reflect.InvocationHandler} for
@@ -66,7 +66,7 @@ public class ProtocolInvocationHandler implements DefaultInterfaceMethodInvocati
             } else {
                 ProtocolResponseHandler handler = new ProtocolResponseHandler(client, method);
 
-                result = client.client().execute((HttpUriRequest) request, handler, client.context());
+                result = client.client().execute((HttpUriRequest) request, client.context(), handler);
             }
         }
 

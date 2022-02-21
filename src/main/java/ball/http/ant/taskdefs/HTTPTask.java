@@ -39,30 +39,31 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.Accessors;
 import org.apache.commons.beanutils.BeanMap;
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.HttpMessage;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpRequestInterceptor;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpResponseInterceptor;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
-import org.apache.http.client.methods.HttpOptions;
-import org.apache.http.client.methods.HttpPatch;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.entity.BufferedHttpEntity;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.protocol.HttpContext;
+import org.apache.hc.client5.http.classic.methods.HttpDelete;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpHead;
+import org.apache.hc.client5.http.classic.methods.HttpOptions;
+import org.apache.hc.client5.http.classic.methods.HttpPatch;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpPut;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.core5.http.EntityDetails;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpEntityContainer;
+import org.apache.hc.core5.http.HttpMessage;
+import org.apache.hc.core5.http.HttpRequest;
+import org.apache.hc.core5.http.HttpRequestInterceptor;
+import org.apache.hc.core5.http.HttpResponse;
+import org.apache.hc.core5.http.HttpResponseInterceptor;
+import org.apache.hc.core5.http.NameValuePair;
+import org.apache.hc.core5.http.io.entity.BufferedHttpEntity;
+import org.apache.hc.core5.http.io.entity.StringEntity;
+import org.apache.hc.core5.http.protocol.HttpContext;
+import org.apache.hc.core5.net.URIBuilder;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.util.ClasspathUtils;
@@ -71,7 +72,6 @@ import static ball.activation.ReaderWriterDataSource.CONTENT_TYPE;
 import static lombok.AccessLevel.PROTECTED;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static org.apache.tools.ant.Project.toBoolean;
 
 /**
  * Abstract {@link.uri http://ant.apache.org/ Ant} base {@link Task} for web
@@ -88,8 +88,8 @@ public abstract class HTTPTask extends Task implements AnnotatedAntTask, Classpa
 
     private final HttpClientBuilder builder =
         HttpClientBuilder.create()
-        .addInterceptorLast((HttpRequestInterceptor) this)
-        .addInterceptorLast((HttpResponseInterceptor) this);
+        .addRequestInterceptorLast(this)
+        .addResponseInterceptorLast(this);
 
     @Getter @Setter @Accessors(chain = true, fluent = true)
     private ClasspathUtils.Delegate delegate = null;
@@ -118,14 +118,14 @@ public abstract class HTTPTask extends Task implements AnnotatedAntTask, Classpa
     protected HttpClientBuilder builder() { return builder; }
 
     @Override
-    public void process(HttpRequest request, HttpContext context) throws IOException {
-        if (request instanceof HttpEntityEnclosingRequest) {
-            HttpEntity entity = ((HttpEntityEnclosingRequest) request).getEntity();
+    public void process(HttpRequest request, EntityDetails details, HttpContext context) throws IOException {
+        if (request instanceof HttpEntityContainer) {
+            HttpEntity entity = ((HttpEntityContainer) request).getEntity();
 
             if (entity != null) {
                 if (! entity.isRepeatable()) {
                     if (isBuffer()) {
-                        ((HttpEntityEnclosingRequest) request).setEntity(new BufferedHttpEntity(entity));
+                        ((HttpEntityContainer) request).setEntity(new BufferedHttpEntity(entity));
                     }
                 }
             }
@@ -138,13 +138,15 @@ public abstract class HTTPTask extends Task implements AnnotatedAntTask, Classpa
     }
 
     @Override
-    public void process(HttpResponse response, HttpContext context) throws IOException {
-        HttpEntity entity = response.getEntity();
+    public void process(HttpResponse response, EntityDetails details, HttpContext context) throws IOException {
+        if (response instanceof HttpEntityContainer) {
+            HttpEntity entity = ((HttpEntityContainer) response).getEntity();
 
-        if (entity != null) {
-            if (! entity.isRepeatable()) {
-                if (isBuffer()) {
-                    response.setEntity(new BufferedHttpEntity(entity));
+            if (entity != null) {
+                if (! entity.isRepeatable()) {
+                    if (isBuffer()) {
+                        ((HttpEntityContainer) response).setEntity(new BufferedHttpEntity(entity));
+                    }
                 }
             }
         }
@@ -170,15 +172,16 @@ public abstract class HTTPTask extends Task implements AnnotatedAntTask, Classpa
      * @param   message         The {@link HttpMessage} to log.
      */
     protected void log(HttpMessage message) {
-        if (message instanceof HttpRequest) {
-            log(String.valueOf(((HttpRequest) message).getRequestLine()));
-        }
-
-        if (message instanceof HttpResponse) {
-            log(String.valueOf(((HttpResponse) message).getStatusLine()));
-        }
-
-        for (Header header : message.getAllHeaders()) {
+        /*
+         * if (message instanceof HttpRequest) {
+         *     log(String.valueOf(((HttpRequest) message).getRequestLine()));
+         * }
+         *
+         * if (message instanceof HttpResponse) {
+         *     log(String.valueOf(((HttpResponse) message).getStatusLine()));
+         * }
+         */
+        for (Header header : message.getHeaders()) {
             log(String.valueOf(header));
         }
 
@@ -193,14 +196,8 @@ public abstract class HTTPTask extends Task implements AnnotatedAntTask, Classpa
         HttpEntity entity = null;
 
         if (entity == null) {
-            if (message instanceof HttpEntityEnclosingRequest) {
-                entity = ((HttpEntityEnclosingRequest) message).getEntity();
-            }
-        }
-
-        if (entity == null) {
-            if (message instanceof HttpResponse) {
-                entity = ((HttpResponse) message).getEntity();
+            if (message instanceof HttpEntityContainer) {
+                entity = ((HttpEntityContainer) message).getEntity();
             }
         }
 
@@ -339,7 +336,7 @@ public abstract class HTTPTask extends Task implements AnnotatedAntTask, Classpa
          * @throws      Exception       If an exception is encountered.
          */
         protected void configure(HttpUriRequest request) throws Exception {
-            ((HttpRequestBase) request).setURI(builder.build());
+            ((HttpUriRequestBase) request).setUri(builder.build());
 
             addHeaders(request, getPrefixedProperties("header" + DOT, properties).entrySet());
             addHeaders(request, headers);
@@ -359,7 +356,7 @@ public abstract class HTTPTask extends Task implements AnnotatedAntTask, Classpa
 
         private void setEntity(HttpUriRequest request, String content) throws Exception {
             if (! isEmpty(content)) {
-                ((HttpEntityEnclosingRequest) request).setEntity(new StringEntity(content));
+                ((HttpEntityContainer) request).setEntity(new StringEntity(content));
             }
         }
 
@@ -392,7 +389,7 @@ public abstract class HTTPTask extends Task implements AnnotatedAntTask, Classpa
     @NoArgsConstructor @ToString
     public static class Delete extends Request {
         @Override
-        protected HttpUriRequest request() { return new HttpDelete(); }
+        protected HttpUriRequest request() { return new HttpDelete(EMPTY); }
     }
 
     /**
@@ -405,7 +402,7 @@ public abstract class HTTPTask extends Task implements AnnotatedAntTask, Classpa
     @NoArgsConstructor @ToString
     public static class Get extends Request {
         @Override
-        protected HttpUriRequest request() { return new HttpGet(); }
+        protected HttpUriRequest request() { return new HttpGet(EMPTY); }
     }
 
     /**
@@ -418,7 +415,7 @@ public abstract class HTTPTask extends Task implements AnnotatedAntTask, Classpa
     @NoArgsConstructor @ToString
     public static class Head extends Request {
         @Override
-        protected HttpUriRequest request() { return new HttpHead(); }
+        protected HttpUriRequest request() { return new HttpHead(EMPTY); }
     }
 
     /**
@@ -431,7 +428,7 @@ public abstract class HTTPTask extends Task implements AnnotatedAntTask, Classpa
     @NoArgsConstructor @ToString
     public static class Options extends Request {
         @Override
-        protected HttpUriRequest request() { return new HttpOptions(); }
+        protected HttpUriRequest request() { return new HttpOptions(EMPTY); }
     }
 
     /**
@@ -444,7 +441,7 @@ public abstract class HTTPTask extends Task implements AnnotatedAntTask, Classpa
     @NoArgsConstructor @ToString
     public static class Patch extends Request {
         @Override
-        protected HttpUriRequest request() { return new HttpPatch(); }
+        protected HttpUriRequest request() { return new HttpPatch(EMPTY); }
     }
 
     /**
@@ -457,7 +454,7 @@ public abstract class HTTPTask extends Task implements AnnotatedAntTask, Classpa
     @NoArgsConstructor @ToString
     public static class Post extends Request {
         @Override
-        protected HttpUriRequest request() { return new HttpPost(); }
+        protected HttpUriRequest request() { return new HttpPost(EMPTY); }
     }
 
     /**
@@ -470,7 +467,7 @@ public abstract class HTTPTask extends Task implements AnnotatedAntTask, Classpa
     @NoArgsConstructor @ToString
     public static class Put extends Request {
         @Override
-        protected HttpUriRequest request() { return new HttpPut(); }
+        protected HttpUriRequest request() { return new HttpPut(EMPTY); }
     }
 
     /**
