@@ -21,14 +21,14 @@
          xmlns:util="antlib:ball.util.ant"
          name="ball.http" basedir="." default="jar">
   <description>
-    ball.http
+    ball-http
     -------------------------------
     Web API Client (HTTP) Utilities
   </description>
 
   <resolver:resolve>
     <dependencies>
-      <dependency coords="ball:parent:2022.1.1:xml:compile"/>
+      <dependency coords="ball:parent:2022.1.2-SNAPSHOT:xml:compile"/>
     </dependencies>
     <properties/>
   </resolver:resolve>
