@@ -1,1 +1,1 @@
-See https://github.com/allen-ball/javadoc for published javadoc.
+See https://allen-ball.github.io/ball-http/ for published javadoc.
